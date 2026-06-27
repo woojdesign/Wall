@@ -1,0 +1,135 @@
+import SwiftUI
+import WoojTokens
+
+struct StartView: View {
+    @EnvironmentObject var model: SessionModel
+
+    private struct Preset: Identifiable, Equatable {
+        let minutes: Int, words: Int
+        var id: String { "\(minutes)-\(words)" }
+    }
+    private let presets = [
+        Preset(minutes: 15, words: 150),
+        Preset(minutes: 25, words: 300),
+        Preset(minutes: 45, words: 600),
+    ]
+
+    var body: some View {
+        VStack(spacing: WoojSpace.xl) {
+            VStack(spacing: WoojSpace.md) {
+                Text("Wall").wallLabel()
+                Text("Step away from the noise.")
+                    .wallTitle()
+                Text("The internet goes quiet until the time is served and the words are written. Nothing to solve — just somewhere to put it down.")
+                    .wallBody()
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+            }
+
+            HStack(spacing: WoojSpace.xs) {
+                ForEach(presets) { p in
+                    Chip(
+                        title: "\(p.minutes)m · \(p.words)",
+                        selected: model.settings.durationMinutes == p.minutes && model.settings.wordTarget == p.words
+                    ) {
+                        model.settings.durationMinutes = p.minutes
+                        model.settings.wordTarget = p.words
+                    }
+                }
+            }
+
+            HStack(spacing: WoojSpace.xxl) {
+                Dial(label: "Minutes", value: $model.settings.durationMinutes, step: 5, range: 5...180)
+                Dial(label: model.settings.countMode.label.capitalized,
+                     value: $model.settings.wordTarget, step: 50, range: 0...5000)
+            }
+
+            Picker("", selection: $model.settings.countMode) {
+                ForEach(CountMode.allCases, id: \.self) { Text($0.label.capitalized).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 240)
+
+            Button("Begin") { model.begin() }
+                .buttonStyle(WallPrimaryButtonStyle())
+                .frame(width: 240)
+                .padding(.top, WoojSpace.xs)
+
+            // Quiet opt-out from the network cut. Toggle below Begin so the
+            // primary path stays "Wall = the wall." Reads as an offer until
+            // tapped, then as a confirmation of current state.
+            Button {
+                model.settings.keepOnline.toggle()
+            } label: {
+                Text(model.settings.keepOnline ? "staying online" : "or stay online for this one")
+                    .font(WoojType.label.font)
+                    .foregroundStyle(WoojColor.tertiary)
+                    .contentTransition(.opacity)
+            }
+            .buttonStyle(.plain)
+            .animation(WoojMotion.calm.animation, value: model.settings.keepOnline)
+        }
+        .padding(WoojSpace.xxl)
+    }
+}
+
+private struct Chip: View {
+    let title: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(WoojType.label.font)
+                .tracking(WoojType.label.tracking)
+                .foregroundStyle(selected ? WoojColor.ink : WoojColor.tertiary)
+                .padding(.vertical, WoojSpace.xs)
+                .padding(.horizontal, WoojSpace.md)
+                .background(selected ? AnyShapeStyle(WoojColor.surface) : AnyShapeStyle(.clear), in: Capsule())
+                .overlay(Capsule().stroke(WoojColor.line, lineWidth: 1).opacity(selected ? 1 : 0.6))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct Dial: View {
+    let label: String
+    @Binding var value: Int
+    let step: Int
+    let range: ClosedRange<Int>
+
+    var body: some View {
+        VStack(spacing: WoojSpace.xs) {
+            Text(label).wallLabel()
+            HStack(spacing: WoojSpace.md) {
+                StepButton(symbol: "minus") { value = max(range.lowerBound, value - step) }
+                Text("\(value)")
+                    .font(WoojType.display.font)
+                    .tracking(WoojType.display.tracking)
+                    .foregroundStyle(WoojColor.ink)
+                    .frame(minWidth: 96)
+                    .contentTransition(.numericText())
+                    .animation(WoojMotion.settle.animation, value: value)
+                StepButton(symbol: "plus") { value = min(range.upperBound, value + step) }
+            }
+        }
+    }
+}
+
+private struct StepButton: View {
+    let symbol: String
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(WoojColor.secondary)
+                .frame(width: 32, height: 32)
+                .background(WoojColor.surface, in: Circle())
+                .overlay(Circle().stroke(WoojColor.line, lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+    }
+}

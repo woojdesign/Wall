@@ -1,0 +1,9 @@
+# Build products
+.build/
+build/
+
+# macOS
+.DS_Store
+
+# Claude local settings (project settings.json is tracked; local overrides are not)
+.claude/settings.local.json
