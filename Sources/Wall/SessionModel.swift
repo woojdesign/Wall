@@ -8,7 +8,7 @@ enum CountMode: String, Codable, CaseIterable {
 
 struct WallSettings: Codable, Equatable {
     var durationMinutes: Int = 20
-    var wordTarget: Int = 250
+    var wordTarget: Int = 1250
     var countMode: CountMode = .words
     /// When true, the session runs without touching pf — the writing
     /// container is still real (gates, timer, autosave), but background

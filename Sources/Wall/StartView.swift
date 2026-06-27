@@ -8,13 +8,13 @@ struct StartView: View {
         let minutes: Int, words: Int
         var id: String { "\(minutes)-\(words)" }
     }
-    // Calibrated for a 60–100 wpm typist: the word count is a gentle floor
-    // (~12 effective wpm, leaving room to think), so time is the real gate.
-    // Top block capped at 30 minutes.
+    // Calibrated to a real sustained pace of ~65 wpm (≈1000 words in 15 min),
+    // with a gentle taper for longer blocks — so the word and time gates roughly
+    // co-terminate instead of one going slack. Top block capped at 30 minutes.
     private let presets = [
-        Preset(minutes: 10, words: 100),
-        Preset(minutes: 20, words: 250),
-        Preset(minutes: 30, words: 400),
+        Preset(minutes: 15, words: 1000),
+        Preset(minutes: 20, words: 1250),
+        Preset(minutes: 30, words: 1750),
     ]
 
     var body: some View {
