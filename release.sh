@@ -96,10 +96,19 @@ GEN_APPCAST="$(find "$ROOT/.build/artifacts" -type f -name generate_appcast \
 RELEASES="build/releases"
 rm -rf "$RELEASES"; mkdir -p "$RELEASES"
 cp "$ZIP" "$RELEASES/"
+# Drop the changelog next to the archive under the SAME basename — generate_appcast
+# picks up a same-named .md/.html/.txt and embeds it as the update's release notes,
+# so Sparkle's "A new version is available" dialog shows what changed.
+cp "$CHANGELOG" "$RELEASES/$(basename "${ZIP%.zip}").md"
 echo "==> Sign update + generate appcast"
 "$GEN_APPCAST" "$RELEASES" \
+    --embed-release-notes \
     --download-url-prefix "https://github.com/$REPO/releases/download/$TAG/"
 [ -f "$RELEASES/appcast.xml" ] || { echo "error: appcast.xml not generated"; exit 1; }
+
+# Keep only the appcast + archives as release assets; the loose .md was just
+# input for generate_appcast (its content now lives inside appcast.xml).
+rm -f "$RELEASES/$(basename "${ZIP%.zip}").md"
 
 # Stable-named copies so the "latest" redirect is a permanent share link.
 # Made AFTER generate_appcast so they aren't picked up as extra appcast items.

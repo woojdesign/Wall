@@ -85,6 +85,21 @@ open notes in `$EDITOR`).
 - **GitHub**: `gh auth login` for `woojdesign`. Repo: `woojdesign/Wall`.
 - `brew install create-dmg` is optional — `make-dmg.sh` works without it.
 
+## Tests + CI
+
+- `swift test` runs `Tests/WallTests` — pure `SessionModel` logic (word/char
+  counting, gates, progress) and `WallSettings` codable, via `MockBlocker`.
+- **CI** (`.github/workflows/ci.yml`) builds + tests on `macos-15` for every
+  push/PR to `main`. Wall references `../wooj-tokens` by local path, so the
+  workflow checks out **woojdesign/wooj-tokens** as a sibling — keep that step
+  if you touch CI, or the build can't resolve WoojTokens.
+
+## Version + About
+
+- `AppVersion` (`Sources/Wall/About.swift`) reads `CFBundleShortVersionString` /
+  `CFBundleVersion` from the bundle (falls back to "dev" unbundled). Shown in the
+  branded About window and the menu-bar footer.
+
 ## Gotchas
 
 - **Helper after an update**: Sparkle replaces the `.app` cleanly, but the

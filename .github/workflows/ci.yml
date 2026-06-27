@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: macos-15
+    steps:
+      # Wall references ../wooj-tokens by local path, so both repos must sit
+      # side by side. Check Wall into ./wall and wooj-tokens into ./wooj-tokens.
+      - name: Checkout Wall
+        uses: actions/checkout@v4
+        with:
+          path: wall
+
+      - name: Checkout wooj-tokens (sibling dependency)
+        uses: actions/checkout@v4
+        with:
+          repository: woojdesign/wooj-tokens
+          path: wooj-tokens
+
+      # macos-15 ships a recent Xcode (Swift 6.x) by default, which satisfies
+      # this package's swift-tools-version: 6.0. Print it for the record.
+      - name: Swift version
+        run: swift --version
+
+      - name: Build
+        working-directory: wall
+        run: swift build -v
+
+      - name: Test
+        working-directory: wall
+        run: swift test

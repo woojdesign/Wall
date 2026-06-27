@@ -29,7 +29,12 @@ let package = Package(
         .target(
             name: "WallShared",
             path: "Sources/WallShared"
-        )
+        ),
+        .testTarget(
+            name: "WallTests",
+            dependencies: ["Wall"],
+            path: "Tests/WallTests"
+        ),
     ],
     swiftLanguageModes: [.v5]
 )

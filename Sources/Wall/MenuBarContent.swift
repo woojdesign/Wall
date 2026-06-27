@@ -47,11 +47,22 @@ struct MenuBarContent: View {
             }
             .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
 
+            Button("About Wall") {
+                openWindow(id: "about")
+                NSApp.activate(ignoringOtherApps: true)
+            }
+            .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
+
             CheckForUpdatesButton()
                 .foregroundStyle(WoojColor.secondary)
 
             Button("Quit Wall") { NSApplication.shared.terminate(nil) }
                 .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
+
+            Text("Wall \(AppVersion.display)")
+                .font(WoojType.caption.font)
+                .foregroundStyle(WoojColor.tertiary)
+                .padding(.top, WoojSpace.xxs)
         }
         .padding(WoojSpace.md)
         .frame(width: 260, alignment: .leading)

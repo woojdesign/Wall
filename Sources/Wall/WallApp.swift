@@ -30,6 +30,21 @@ struct WallApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentMinSize)
         .defaultSize(width: 880, height: 740)
+        .commands {
+            // Replace the stock "About Wall" so it opens our branded panel
+            // instead of the system one.
+            CommandGroup(replacing: .appInfo) {
+                AboutCommand()
+            }
+        }
+
+        // Branded About panel, opened from the app menu / menu-bar item.
+        Window("About Wall", id: "about") {
+            AboutView()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
 
         MenuBarExtra {
             MenuBarContent()
@@ -38,6 +53,18 @@ struct WallApp: App {
             WallTrayIcon(isActive: model.phase == .active)
         }
         .menuBarExtraStyle(.window)
+    }
+}
+
+/// "About Wall" menu item — lives in its own view so it can reach
+/// `openWindow` from the `.commands` builder.
+struct AboutCommand: View {
+    @Environment(\.openWindow) private var openWindow
+    var body: some View {
+        Button("About Wall") {
+            openWindow(id: "about")
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 }
 
