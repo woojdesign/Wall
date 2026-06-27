@@ -143,8 +143,8 @@ final class WallSettingsTests: XCTestCase {
 
     func testDefaults() {
         let s = WallSettings()
-        XCTAssertEqual(s.durationMinutes, 25)
-        XCTAssertEqual(s.wordTarget, 300)
+        XCTAssertEqual(s.durationMinutes, 20)
+        XCTAssertEqual(s.wordTarget, 250)
         XCTAssertEqual(s.countMode, .words)
         XCTAssertFalse(s.keepOnline)
     }
