@@ -49,6 +49,10 @@ done
 # claude CLI is unavailable. Tracked under release-notes/<version>.md.
 mkdir -p release-notes
 CHANGELOG="release-notes/$VERSION.md"
+# `gh release create` makes the version tag server-side, so a local clone won't
+# have it until fetched. Pull tags first or the changelog range can't scope to
+# since-last-release (it would fall back to the whole history).
+git fetch --tags --quiet 2>/dev/null || true
 LAST_TAG="$(git describe --tags --match 'v*' --abbrev=0 2>/dev/null || true)"
 RANGE="${LAST_TAG:+$LAST_TAG..}HEAD"
 
