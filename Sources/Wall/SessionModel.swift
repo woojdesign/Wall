@@ -153,6 +153,10 @@ final class SessionModel: ObservableObject {
 
     private func autosave() {
         guard let url = autosaveURL else { return }
+        // Don't litter Documents/Wall with empty files for sessions where
+        // nothing was written (the archive also hides these, but better not to
+        // create them at all).
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         try? text.write(to: url, atomically: true, encoding: .utf8)
     }
 

@@ -134,6 +134,7 @@ struct WallTrayIcon: View {
 
 struct RootView: View {
     @EnvironmentObject var model: SessionModel
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         ZStack {
@@ -144,6 +145,20 @@ struct RootView: View {
                 HelperBanner()
                 phaseView
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        // A quiet way into the archive from the main screen — but not while a
+        // session is active; the wall is for writing, not browsing.
+        .overlay(alignment: .topTrailing) {
+            if model.phase != .active {
+                Button("Archive") {
+                    openWindow(id: "archive")
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+                .buttonStyle(.plain)
+                .font(WoojType.label.font)
+                .foregroundStyle(WoojColor.tertiary)
+                .padding(WoojSpace.lg)
             }
         }
         // wooj-tokens is light-only today; pin light so fixed warm values

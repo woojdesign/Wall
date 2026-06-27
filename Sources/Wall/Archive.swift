@@ -75,7 +75,11 @@ final class ArchiveModel: ObservableObject {
     @Published var query: String = ""
 
     func reload() {
-        entries = WallActions.allWritings().map(Entry.load)
+        // Skip empty/whitespace-only files — an abandoned session that never
+        // got any words isn't worth showing.
+        entries = WallActions.allWritings()
+            .map(Entry.load)
+            .filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         if selection == nil || !entries.contains(where: { $0.id == selection }) {
             selection = filtered.first?.id
         }
