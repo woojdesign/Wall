@@ -63,8 +63,14 @@ else
     LOG="$(git log --no-merges --pretty='- %s' "$RANGE" 2>/dev/null || true)"
     [ -n "$LOG" ] || LOG="- Initial release."
     if command -v claude >/dev/null && [ -n "$LAST_TAG" ]; then
-        printf 'Rewrite these git commits as concise, user-facing release-note bullets for the macOS app "Wall" (a focus/writing app). Group nothing, no preamble, just the bullets:\n\n%s\n' "$LOG" \
-            | claude -p > "$CHANGELOG" 2>/dev/null || printf '%s\n' "$LOG" > "$CHANGELOG"
+        # claude tends to wrap output in preamble / trailing questions even when
+        # told not to, and that prose would land verbatim in the GitHub release
+        # and the Sparkle update dialog. So keep only bullet lines, and fall back
+        # to the raw commit list if filtering leaves nothing.
+        DRAFT="$(printf 'Rewrite these git commits as concise, user-facing release-note bullets for the macOS app "Wall" (a focus/writing app). Output ONLY the bullet lines, each starting with "- ". No preamble, no commentary, no trailing questions.\n\n%s\n' "$LOG" \
+            | claude -p 2>/dev/null | grep -E '^[[:space:]]*-' || true)"
+        if [ -n "$DRAFT" ]; then printf '%s\n' "$DRAFT" > "$CHANGELOG"
+        else printf '%s\n' "$LOG" > "$CHANGELOG"; fi
     else
         printf '%s\n' "$LOG" > "$CHANGELOG"
     fi
