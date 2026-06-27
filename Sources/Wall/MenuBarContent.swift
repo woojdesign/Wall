@@ -54,6 +54,7 @@ struct MenuBarContent: View {
             .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
 
             CheckForUpdatesButton()
+                .buttonStyle(.plain)
                 .foregroundStyle(WoojColor.secondary)
 
             Button("Quit Wall") { NSApplication.shared.terminate(nil) }

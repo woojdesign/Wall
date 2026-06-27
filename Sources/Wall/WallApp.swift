@@ -36,6 +36,12 @@ struct WallApp: App {
             CommandGroup(replacing: .appInfo) {
                 AboutCommand()
             }
+            // "Check for Updates…" in the app menu (under About), so it's
+            // reachable when the window is foregrounded — not just from the
+            // menu-bar tray popover.
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesButton()
+            }
         }
 
         // Branded About panel, opened from the app menu / menu-bar item.

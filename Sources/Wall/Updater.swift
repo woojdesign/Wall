@@ -37,13 +37,15 @@ final class Updater: ObservableObject {
     }
 }
 
-/// Menu-bar "Check for Updates…" item, styled like the other plain menu rows.
+/// "Check for Updates…" — observes the updater so it disables itself while a
+/// check is in flight. Style-neutral so it renders correctly both as a real
+/// menu-bar command (app menu) and as a styled row in the tray popover; the
+/// caller applies `.buttonStyle`/`.foregroundStyle` where needed.
 struct CheckForUpdatesButton: View {
     @ObservedObject private var updater = Updater.shared
 
     var body: some View {
         Button("Check for Updates…") { updater.checkForUpdates() }
-            .buttonStyle(.plain)
             .disabled(!updater.canCheckForUpdates)
     }
 }
