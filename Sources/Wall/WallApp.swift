@@ -64,6 +64,11 @@ struct WallApp: App {
         .windowResizability(.contentMinSize)
         .defaultSize(width: 860, height: 600)
 
+        // Preferences (⌘,) — currently just the writing-folder location.
+        Settings {
+            SettingsView()
+        }
+
         MenuBarExtra {
             MenuBarContent()
                 .environmentObject(model)

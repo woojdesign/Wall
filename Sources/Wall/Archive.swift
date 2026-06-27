@@ -117,6 +117,10 @@ struct ArchiveView: View {
         .onReceive(NotificationCenter.default.publisher(
             for: NSApplication.didBecomeActiveNotification
         )) { _ in model.reload() }
+        // And reflect a changed writing folder immediately.
+        .onReceive(NotificationCenter.default.publisher(for: .wallStorageChanged)) { _ in
+            model.reload()
+        }
     }
 
     // MARK: Sidebar

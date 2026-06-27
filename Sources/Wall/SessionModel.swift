@@ -195,7 +195,8 @@ struct SessionStore {
 
 extension FileManager {
     static var wallSupport: URL? { dir(in: .applicationSupportDirectory) }
-    static var wallDocuments: URL? { dir(in: .documentDirectory) }
+    /// The configured writing folder (default ~/Documents/Wall). See Storage.
+    static var wallDocuments: URL? { Storage.directoryURL }
 
     private static func dir(in domain: FileManager.SearchPathDirectory) -> URL? {
         guard let base = FileManager.default.urls(for: domain, in: .userDomainMask).first else { return nil }
