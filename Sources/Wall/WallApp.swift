@@ -42,6 +42,10 @@ struct WallApp: App {
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesButton()
             }
+            // Archive (⌘L) in the standard sidebar/View area.
+            CommandGroup(after: .sidebar) {
+                ArchiveCommand()
+            }
         }
 
         // Branded About panel, opened from the app menu / menu-bar item.
@@ -51,6 +55,14 @@ struct WallApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .defaultPosition(.center)
+
+        // Archive — read-only library of past sessions.
+        Window("Archive", id: "archive") {
+            ArchiveView()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentMinSize)
+        .defaultSize(width: 860, height: 600)
 
         MenuBarExtra {
             MenuBarContent()

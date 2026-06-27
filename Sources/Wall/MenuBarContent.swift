@@ -47,6 +47,12 @@ struct MenuBarContent: View {
             }
             .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
 
+            Button("Archive") {
+                openWindow(id: "archive")
+                NSApp.activate(ignoringOtherApps: true)
+            }
+            .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
+
             Button("About Wall") {
                 openWindow(id: "about")
                 NSApp.activate(ignoringOtherApps: true)

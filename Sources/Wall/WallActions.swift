@@ -18,9 +18,9 @@ enum WallActions {
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
-    /// The most recent .md in Documents/Wall, or nil if none exist yet.
-    static func mostRecentWriting() -> URL? {
-        guard let dir = FileManager.wallDocuments else { return nil }
+    /// Every .md in Documents/Wall, newest first.
+    static func allWritings() -> [URL] {
+        guard let dir = FileManager.wallDocuments else { return [] }
         let files = (try? FileManager.default.contentsOfDirectory(
             at: dir,
             includingPropertiesForKeys: [.contentModificationDateKey],
@@ -33,7 +33,16 @@ enum WallActions {
                 let r = (try? rhs.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
                 return l > r
             }
-            .first
+    }
+
+    /// The most recent .md in Documents/Wall, or nil if none exist yet.
+    static func mostRecentWriting() -> URL? { allWritings().first }
+
+    /// Move a writing to the Trash (recoverable — never a hard delete). Returns
+    /// true on success.
+    @discardableResult
+    static func trash(_ url: URL) -> Bool {
+        (try? FileManager.default.trashItem(at: url, resultingItemURL: nil)) != nil
     }
 
     /// Read a writing file, or empty string on failure.
