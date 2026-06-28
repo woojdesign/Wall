@@ -29,7 +29,11 @@ struct SessionView: View {
             .onChange(of: model.text) { model.textChanged() }
             .frame(maxWidth: 640)
             .padding(.horizontal, WoojSpace.xxl)
-            .padding(.top, WoojSpace.huge)
+            // Small top margin so text can scroll near the top of the window —
+            // a big gap looked silly, especially in full-screen immersion. The
+            // session start is centered by the surface's own typewriter inset,
+            // independent of this.
+            .padding(.top, WoojSpace.lg)
             .padding(.bottom, WoojSpace.xl)
 
             footer

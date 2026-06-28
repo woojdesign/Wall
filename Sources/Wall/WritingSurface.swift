@@ -229,7 +229,15 @@ enum FocusBoundary {
 
         func isBoundary(_ idx: Int) -> Bool {
             guard idx >= 0, idx < len, let s = Unicode.Scalar(ns.character(at: idx)) else { return false }
-            return terminators.contains(s)
+            guard terminators.contains(s) else { return false }
+            // A period right after a digit is an enumerator ("1.", "2.", "3.14"),
+            // not a sentence end — list markers shouldn't segment the active text.
+            if s == ".", idx > 0,
+               let prev = Unicode.Scalar(ns.character(at: idx - 1)),
+               CharacterSet.decimalDigits.contains(prev) {
+                return false
+            }
+            return true
         }
 
         // End (exclusive). If the caret just landed after a terminator, the

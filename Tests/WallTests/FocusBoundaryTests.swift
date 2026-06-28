@@ -45,4 +45,29 @@ final class FocusBoundaryTests: XCTestCase {
     func testEmptyText() {
         XCTAssertEqual(FocusBoundary.sentenceRange(in: "", caret: 0).length, 0)
     }
+
+    // Enumerators ("1.", "2.") must not segment the active text — a period right
+    // after a digit isn't a sentence end.
+    func testInlineEnumeratorsAreNotBoundaries() {
+        let t = "I need to 1. rest and 2. reflect on things"
+        // caret near the end — the whole run stays one active sentence, not cut
+        // at "1." or "2."
+        XCTAssertEqual(active(t, caret: t.count), "I need to 1. rest and 2. reflect on things")
+    }
+
+    func testListMarkerAtLineStartNotABoundary() {
+        let t = "1. first point that runs on"
+        XCTAssertEqual(active(t, caret: t.count), "1. first point that runs on")
+    }
+
+    func testDecimalNumberNotABoundary() {
+        let t = "It cost 3.14 dollars today"
+        XCTAssertEqual(active(t, caret: t.count), "It cost 3.14 dollars today")
+    }
+
+    func testRealPeriodStillBoundsAfterEnumerator() {
+        // A genuine sentence end after a list item still bounds.
+        let t = "1. do this. Then that"
+        XCTAssertEqual(active(t, caret: t.count), "Then that")
+    }
 }
