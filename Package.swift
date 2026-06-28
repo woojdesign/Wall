@@ -10,6 +10,8 @@ let package = Package(
         // Sparkle — in-app auto-updates from the GitHub Releases appcast.
         // Same major.minor StickySync ships (2.9.x).
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.9.0"),
+        // Snapshot testing — visual regression for key views (test target only).
+        .package(url: "https://github.com/pointfreeco/swift-snapshot-testing", from: "1.17.0"),
     ],
     targets: [
         .executableTarget(
@@ -32,7 +34,10 @@ let package = Package(
         ),
         .testTarget(
             name: "WallTests",
-            dependencies: ["Wall"],
+            dependencies: [
+                "Wall",
+                .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
+            ],
             path: "Tests/WallTests"
         ),
     ],
