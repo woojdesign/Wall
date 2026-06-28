@@ -7,18 +7,24 @@ Best-in-class Wall = iA Writer's surface craft fused onto Wall's enforcement.
 
 ## Build sequence (each step shippable)
 
-- [ ] **1. Real text engine.** Replace SwiftUI `TextEditor` with a TextKit 2
-      `NSTextView` surface. Nail input latency + typography. Everything else
-      rides on this. *(Open decision: writing voice — Charter serif vs a
-      mono/duospace. Lean duospace for drafting; keep Charter for reading.)*
-- [ ] **2. Typewriter scrolling.** Pin the active line at a fixed height; text
-      scrolls beneath it. Eyes stop climbing the screen.
-- [ ] **3. Sentence focus / dimming.** Dim all but the current sentence — this
-      *is* Wall's placeholder, "what's here right now?" The signature move.
-- [ ] **4. Immersion mode.** Full-screen, menu bar hidden, tied to the session
-      lifecycle. iA can dim distractions; only Wall can *remove* them.
-- [ ] **5. Inline markdown + smart typography.** Subtle live styling that keeps
-      the syntax visible; curly quotes, em-dashes, ellipses as you type.
+- [x] **1. Real text engine.** Rebuilt on **TextKit 1** (not 2 — TextKit 2's
+      estimated-height layout jittered, causing scroll jumps that worsened with
+      length). Stable geometry. *(Open: Charter serif vs a duospace for drafting.)*
+- [x] **2. Typewriter scrolling.** Active line centered via `lineFragmentRect`;
+      overscroll via symmetric `textContainerInset`.
+- [x] **3. Sentence focus / dimming.** Deterministic boundaries (`. ! ? … \n`),
+      consistent regardless of capitalization.
+- [x] **4. Immersion mode.** Full-screen on session begin, back to a window on
+      end; menu bar auto-hidden. Opt-out in Settings.
+- [x] **5. Smart typography + markdown headers.** Curly quotes + em/en dashes
+      (native); live ATX header styling. *(Bold/italic + ellipsis: follow-up.)*
+
+## Follow-ups / food for thought
+
+- Bold/italic inline styling; `…` substitution.
+- Charter vs duospace decision for the drafting voice.
+- Let text reach the top of the window (currently a little top padding).
+- Spell-check squiggles deliberately off (kept for flow).
 
 ## Discipline — what we refuse (half the answer)
 

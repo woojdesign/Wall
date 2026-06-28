@@ -169,6 +169,8 @@ struct RootView: View {
         // wooj-tokens is light-only today; pin light so fixed warm values
         // aren't fighting a dark system appearance.
         .preferredColorScheme(.light)
+        // Full-screen while writing; back to a window when the session ends.
+        .immersion(phase: model.phase)
     }
 
     @ViewBuilder

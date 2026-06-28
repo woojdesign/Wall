@@ -44,9 +44,13 @@ struct WritingSurface: NSViewRepresentable {
         textView.drawsBackground = false
         textView.backgroundColor = .clear
         textView.insertionPointColor = caretColor
-        textView.isAutomaticQuoteSubstitutionEnabled = false
-        textView.isAutomaticDashSubstitutionEnabled = false
+        // Smart typography: curly quotes and em/en dashes as you type. Autocorrect
+        // and spell-check squiggles stay OFF — a focus tool shouldn't interrupt flow.
+        textView.isAutomaticQuoteSubstitutionEnabled = true
+        textView.isAutomaticDashSubstitutionEnabled = true
         textView.isAutomaticSpellingCorrectionEnabled = false
+        textView.isContinuousSpellCheckingEnabled = false
+        textView.isGrammarCheckingEnabled = false
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
@@ -60,6 +64,7 @@ struct WritingSurface: NSViewRepresentable {
         textView.string = text
         context.coordinator.textView = textView
         context.coordinator.apply(typographyTo: textView)
+        context.coordinator.applyMarkdown(to: textView)
         context.coordinator.applyFocus(to: textView)
 
         let scroll = NSScrollView()
@@ -94,6 +99,7 @@ struct WritingSurface: NSViewRepresentable {
         if textView.string != text {
             textView.string = text
             context.coordinator.apply(typographyTo: textView)
+            context.coordinator.applyMarkdown(to: textView)
             context.coordinator.applyFocus(to: textView)
             textView.scheduleRecenter()
         }
@@ -124,6 +130,7 @@ struct WritingSurface: NSViewRepresentable {
             guard let textView = notification.object as? TypewriterTextView else { return }
             parent.text = textView.string
             textView.needsDisplay = true   // refresh placeholder visibility
+            scheduleMarkdown()
             textView.scheduleRecenter()
         }
 
@@ -150,6 +157,56 @@ struct WritingSurface: NSViewRepresentable {
             storage.endEditing()
         }
 
+        // MARK: Markdown (headers)
+
+        private var markdownScheduled = false
+        /// Coalesce header restyling to once per runloop — it touches fonts
+        /// (which relayout), so we don't want it firing per keystroke.
+        func scheduleMarkdown() {
+            guard !markdownScheduled else { return }
+            markdownScheduled = true
+            DispatchQueue.main.async { [weak self] in
+                self?.markdownScheduled = false
+                if let tv = self?.textView { self?.applyMarkdown(to: tv) }
+            }
+        }
+
+        /// Style ATX headers (`#`…`######`) larger and bold in the same family,
+        /// markers kept visible. Only `.font` is touched, so it composes with the
+        /// focus dimming (which only touches `.foregroundColor`).
+        func applyMarkdown(to textView: NSTextView) {
+            guard let storage = textView.textStorage else { return }
+            let base = parent.font
+            let ns = storage.string as NSString
+            let full = NSRange(location: 0, length: ns.length)
+            let scale: [CGFloat] = [1.6, 1.45, 1.3, 1.2, 1.15, 1.1]
+            storage.beginEditing()
+            storage.addAttribute(.font, value: base, range: full)
+            ns.enumerateSubstrings(in: full, options: .byLines) { line, lineRange, _, _ in
+                guard let line else { return }
+                let level = Markdown.headingLevel(of: line)
+                guard level >= 1 else { return }
+                let size = base.pointSize * scale[level - 1]
+                var f = NSFont(name: base.familyName ?? base.fontName, size: size) ?? base
+                f = NSFontManager.shared.convert(f, toHaveTrait: .boldFontMask)
+                storage.addAttribute(.font, value: f, range: lineRange)
+            }
+            storage.endEditing()
+        }
+    }
+}
+
+/// Minimal markdown recognition for the live writing surface.
+enum Markdown {
+    /// ATX heading level (1–6) of a line, or 0 if it isn't a heading. A run of
+    /// 1–6 leading `#` counts when followed by a space or nothing (so a header
+    /// styles as you type it, before the space).
+    static func headingLevel(of line: String) -> Int {
+        let chars = Array(line)
+        var level = 0
+        while level < chars.count, chars[level] == "#" { level += 1 }
+        guard level >= 1, level <= 6 else { return 0 }
+        return (level == chars.count || chars[level] == " ") ? level : 0
     }
 }
 

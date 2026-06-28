@@ -5,9 +5,27 @@ import WoojTokens
 /// Preferences (⌘,). One pane for now: where writing is saved.
 struct SettingsView: View {
     @State private var path = Storage.directoryURL.path
+    @AppStorage("immersiveSessions") private var immersive = true
 
     var body: some View {
-        VStack(alignment: .leading, spacing: WoojSpace.md) {
+        VStack(alignment: .leading, spacing: WoojSpace.lg) {
+            VStack(alignment: .leading, spacing: WoojSpace.xs) {
+                Text("Sessions").wallLabel()
+                Toggle(isOn: $immersive) {
+                    Text("Full-screen while writing")
+                        .font(WoojType.body.font)
+                        .foregroundStyle(WoojColor.ink)
+                }
+                .toggleStyle(.switch)
+                .tint(WoojColor.clay)
+                Text("When a session begins, Wall takes the whole screen and hides the menu bar — the wall, but for your screen too.")
+                    .font(WoojType.body.font)
+                    .foregroundStyle(WoojColor.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Divider()
+
             Text("Writing folder").wallLabel()
 
             Text("New writing is saved here. Point it at a synced folder — Dropbox, iCloud Drive — to back it up or keep it across Macs.")
