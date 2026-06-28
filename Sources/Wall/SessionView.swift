@@ -3,7 +3,13 @@ import WoojTokens
 
 struct SessionView: View {
     @EnvironmentObject var model: SessionModel
-    @FocusState private var focused: Bool
+
+    // Charter (the reading serif) at the reading scale, bridged into AppKit for
+    // the TextKit 2 surface. The caret takes Wall's clay accent.
+    private var writingFont: NSFont {
+        NSFont(name: WoojType.reading.family, size: WoojType.reading.size)
+            ?? .systemFont(ofSize: WoojType.reading.size)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,14 +24,14 @@ struct SessionView: View {
                         .padding(.leading, 5)
                         .allowsHitTesting(false)
                 }
-                TextEditor(text: $model.text)
-                    .focused($focused)
-                    .font(WoojType.reading.font)
-                    .foregroundStyle(WoojColor.ink)
-                    .lineSpacing(WoojType.reading.lineSpacing)
-                    .scrollContentBackground(.hidden)
-                    .background(.clear)
-                    .onChange(of: model.text) { model.textChanged() }
+                WritingSurface(
+                    text: $model.text,
+                    font: writingFont,
+                    textColor: NSColor(WoojColor.ink),
+                    caretColor: NSColor(WoojColor.clay),
+                    lineSpacing: WoojType.reading.lineSpacing
+                )
+                .onChange(of: model.text) { model.textChanged() }
             }
             .frame(maxWidth: 640)
             .padding(.horizontal, WoojSpace.xxl)
@@ -34,7 +40,6 @@ struct SessionView: View {
 
             footer
         }
-        .onAppear { focused = true }
     }
 
     private var footer: some View {
