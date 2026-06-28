@@ -154,17 +154,16 @@ struct RootView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        // Toggle between the editor and the Archive, in the same window. Hidden
-        // mid-session.
+        // Into the Archive from the editor (top-right). The way *back* lives in
+        // the Archive's own sidebar so it never collides with the reader's
+        // Delete; ⌘L toggles either direction. Hidden mid-session.
         .overlay(alignment: .topTrailing) {
-            if model.phase != .active {
-                Button(archiveOpen ? "Write" : "Archive") {
-                    nav.tab = archiveOpen ? .write : .archive
-                }
-                .buttonStyle(.plain)
-                .font(WoojType.label.font)
-                .foregroundStyle(WoojColor.tertiary)
-                .padding(WoojSpace.lg)
+            if model.phase != .active && !archiveOpen {
+                Button("Archive") { nav.tab = .archive }
+                    .buttonStyle(.plain)
+                    .font(WoojType.label.font)
+                    .foregroundStyle(WoojColor.tertiary)
+                    .padding(WoojSpace.lg)
             }
         }
         // Starting a session always returns to the writing surface.

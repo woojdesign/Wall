@@ -127,6 +127,26 @@ struct ArchiveView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
+            // Back to the editor — lives here (top-leading) so it never collides
+            // with the reader's Copy/Reveal/Delete actions on the right. ⌘L
+            // toggles the same thing.
+            HStack(spacing: WoojSpace.xs) {
+                Button {
+                    Navigation.shared.tab = .write
+                } label: {
+                    HStack(spacing: WoojSpace.xxs) {
+                        Image(systemName: "chevron.left").font(.system(size: 10, weight: .semibold))
+                        Text("Write")
+                    }
+                    .font(WoojType.label.font)
+                    .foregroundStyle(WoojColor.clay)
+                }
+                .buttonStyle(.plain)
+                Spacer()
+            }
+            .padding(.horizontal, WoojSpace.sm)
+            .padding(.top, WoojSpace.sm)
+
             searchField
                 .padding(WoojSpace.sm)
             Rectangle().fill(WoojColor.line).frame(height: 1)
@@ -297,16 +317,21 @@ enum MainTab { case write, archive }
 final class Navigation: ObservableObject {
     static let shared = Navigation()
     @Published var tab: MainTab = .write
+
+    /// Flip between editor and Archive — the ⌘L behavior. (Was one-way once;
+    /// `NavigationTests` guards against that regressing.)
+    func toggleArchive() { tab = (tab == .archive) ? .write : .archive }
 }
 
-/// "Archive" menu item (⌘L) — switches the main window to the Archive tab and
-/// brings it forward.
+/// "Archive" menu item (⌘L) — toggles the main window between the editor and
+/// the Archive, bringing it forward.
 struct ArchiveCommand: View {
+    @ObservedObject private var nav = Navigation.shared
     @Environment(\.openWindow) private var openWindow
     var body: some View {
-        Button("Archive") {
+        Button(nav.tab == .archive ? "Show Editor" : "Show Archive") {
             openWindow(id: "wall")
-            Navigation.shared.tab = .archive
+            nav.toggleArchive()
             NSApp.activate(ignoringOtherApps: true)
         }
         .keyboardShortcut("l", modifiers: .command)
