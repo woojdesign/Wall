@@ -81,14 +81,18 @@ struct WritingSurface: NSViewRepresentable {
             clip.anchor = anchor
             clip.typewriter = typewriter
         }
-        // Only overwrite on an *external* change (reset/restore); a programmatic
-        // set doesn't fire the delegate, so there's no edit loop.
+        // Only react to an *external* change (reset/restore). A programmatic set
+        // doesn't fire the delegate, so there's no edit loop. Crucially we do NOT
+        // recolor/recenter on every SwiftUI re-render (which fires each keystroke
+        // via the model.text binding) — that was one of the competing drivers
+        // fighting the typewriter scroll. Per-keystroke work lives in the AppKit
+        // delegate only.
         if textView.string != text {
             textView.string = text
             context.coordinator.apply(typographyTo: textView)
-            context.coordinator.recenter()
+            context.coordinator.applyFocus(to: textView)
+            context.coordinator.scheduleRecenter()
         }
-        context.coordinator.applyFocus(to: textView)
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
@@ -115,13 +119,29 @@ struct WritingSurface: NSViewRepresentable {
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? NSTextView else { return }
             parent.text = textView.string
-            applyFocus(to: textView)
-            recenter()
+            // Adding/removing a line can change where the caret sits — recenter,
+            // but coalesced (see scheduleRecenter). Focus is re-applied on the
+            // selection change that accompanies every edit.
+            scheduleRecenter()
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {
             if let textView = notification.object as? NSTextView { applyFocus(to: textView) }
-            recenter()
+            scheduleRecenter()
+        }
+
+        /// Coalesce recenter to a single run on the next runloop tick, after
+        /// layout settles. Without this, two delegate callbacks per keystroke
+        /// (text + selection) each scrolled to a slightly different caret rect —
+        /// the flicker between two positions, and the double-return drift.
+        private var recenterScheduled = false
+        func scheduleRecenter() {
+            guard parent.typewriter, !recenterScheduled else { return }
+            recenterScheduled = true
+            DispatchQueue.main.async { [weak self] in
+                self?.recenterScheduled = false
+                self?.recenter()
+            }
         }
 
         /// Dim the whole text, then restore full color to the sentence the caret
@@ -169,6 +189,9 @@ struct WritingSurface: NSViewRepresentable {
             guard caret != .zero else { return }
             let h = clip.bounds.height
             let target = caret.midY - h * parent.anchor
+            // No-op if we're already there — typing along one line shouldn't
+            // re-scroll, only a vertical line change should.
+            if abs(clip.bounds.origin.y - target) < 0.5 { return }
             clip.scroll(to: NSPoint(x: 0, y: target))
             scroll.reflectScrolledClipView(clip)
         }
