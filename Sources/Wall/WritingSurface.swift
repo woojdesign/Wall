@@ -1,11 +1,16 @@
 import SwiftUI
 import AppKit
 
-/// The writing surface — a TextKit 2 `NSTextView` wrapped for SwiftUI.
+/// The writing surface — an NSTextView wrapped for SwiftUI, with typewriter
+/// scrolling and sentence focus.
 ///
-/// Replaces SwiftUI's `TextEditor`, which can't reach the bar a focused-writing
-/// app needs: control over caret, leading, input latency, typewriter scrolling,
-/// and (next) sentence focus. Plain text only — what you write is a `.md` file.
+/// Deliberately **TextKit 1** (NSLayoutManager), not TextKit 2. TextKit 2 lays
+/// out lazily by viewport and *estimates* off-screen height; those estimates
+/// jitter as you scroll/type, so any code that reads an absolute caret position
+/// (like typewriter centering) fights a moving coordinate space — the jumping
+/// that worsens with document length. TextKit 1 lays the whole document out
+/// eagerly, so glyph/line rects are stable. Worth it for a focused-writing app
+/// with session-sized documents.
 struct WritingSurface: NSViewRepresentable {
     @Binding var text: String
 
@@ -13,85 +18,84 @@ struct WritingSurface: NSViewRepresentable {
     var textColor: NSColor
     var caretColor: NSColor
     var lineSpacing: CGFloat
-    /// Inset from the scroll view's top-leading to the first glyph. Paired with
-    /// the placeholder's padding so they sit exactly on top of each other.
-    var topInset: CGFloat = 8
-    /// Pin the active line at a fixed height and scroll the text beneath it.
+    var placeholder: String = ""
     var typewriter: Bool = true
-    /// Where the active line sits, as a fraction of the viewport height.
-    var anchor: CGFloat = 0.45
-    /// Dim everything except the sentence the caret is in ("what's here right now?").
+    /// Dim everything except the sentence the caret is in.
     var focusMode: Bool = true
-    /// Color for the dimmed (out-of-focus) text.
     var dimColor: NSColor = .tertiaryLabelColor
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
     func makeNSView(context: Context) -> NSScrollView {
-        // TextKit 2 (the modern layout stack).
-        let textView = NSTextView(usingTextLayoutManager: true)
+        // Build an explicit TextKit 1 stack so the view never silently uses
+        // TextKit 2 (NSTextView() defaults to TextKit 2 on modern macOS).
+        let textStorage = NSTextStorage()
+        let layoutManager = NSLayoutManager()
+        textStorage.addLayoutManager(layoutManager)
+        let textContainer = NSTextContainer(
+            containerSize: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
+        textContainer.widthTracksTextView = true
+        layoutManager.addTextContainer(textContainer)
+
+        let textView = TypewriterTextView(frame: .zero, textContainer: textContainer)
         textView.delegate = context.coordinator
         textView.isRichText = false
         textView.allowsUndo = true
         textView.drawsBackground = false
         textView.backgroundColor = .clear
         textView.insertionPointColor = caretColor
-        textView.textContainerInset = NSSize(width: 0, height: topInset)
-        // Smart substitutions arrive in a later step (inline markdown + smart
-        // typography); keep the surface literal until then.
         textView.isAutomaticQuoteSubstitutionEnabled = false
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.isAutomaticSpellingCorrectionEnabled = false
-
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
-        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude,
-                                  height: CGFloat.greatestFiniteMagnitude)
-        textView.textContainer?.widthTracksTextView = true
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+
+        textView.typewriter = typewriter
+        textView.lineSpacingValue = lineSpacing
+        textView.placeholder = placeholder
+        textView.placeholderColor = dimColor
 
         textView.string = text
+        context.coordinator.textView = textView
         context.coordinator.apply(typographyTo: textView)
         context.coordinator.applyFocus(to: textView)
 
         let scroll = NSScrollView()
-        // A clip view that allows over-scroll past the top/bottom edges, so the
-        // first and last lines can still reach the typewriter anchor.
-        let clip = TypewriterClipView()
-        clip.anchor = anchor
-        clip.typewriter = typewriter
-        scroll.contentView = clip
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = false
         scroll.hasHorizontalScroller = false
         scroll.documentView = textView
-        context.coordinator.textView = textView
+
+        // Recompute the overscroll inset (and recenter) whenever the viewport
+        // resizes — the inset depends on viewport height.
+        scroll.contentView.postsFrameChangedNotifications = true
+        NotificationCenter.default.addObserver(
+            textView, selector: #selector(TypewriterTextView.viewportChanged),
+            name: NSView.frameDidChangeNotification, object: scroll.contentView)
 
         DispatchQueue.main.async {
             textView.window?.makeFirstResponder(textView)
-            context.coordinator.recenter()
+            textView.updateOverscrollInset()
+            textView.recenter()
         }
         return scroll
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
-        guard let textView = scroll.documentView as? NSTextView else { return }
+        guard let textView = scroll.documentView as? TypewriterTextView else { return }
         context.coordinator.parent = self
-        if let clip = scroll.contentView as? TypewriterClipView {
-            clip.anchor = anchor
-            clip.typewriter = typewriter
-        }
-        // Only react to an *external* change (reset/restore). A programmatic set
-        // doesn't fire the delegate, so there's no edit loop. Crucially we do NOT
-        // recolor/recenter on every SwiftUI re-render (which fires each keystroke
-        // via the model.text binding) — that was one of the competing drivers
-        // fighting the typewriter scroll. Per-keystroke work lives in the AppKit
-        // delegate only.
+        textView.typewriter = typewriter
+        textView.lineSpacingValue = lineSpacing
+        // React only to an *external* text change (reset/restore). We do NOT
+        // recolor or recenter on every SwiftUI re-render — per-keystroke work
+        // lives in the AppKit delegate.
         if textView.string != text {
             textView.string = text
             context.coordinator.apply(typographyTo: textView)
             context.coordinator.applyFocus(to: textView)
-            context.coordinator.scheduleRecenter()
+            textView.scheduleRecenter()
         }
     }
 
@@ -117,36 +121,20 @@ struct WritingSurface: NSViewRepresentable {
         }
 
         func textDidChange(_ notification: Notification) {
-            guard let textView = notification.object as? NSTextView else { return }
+            guard let textView = notification.object as? TypewriterTextView else { return }
             parent.text = textView.string
-            // Adding/removing a line can change where the caret sits — recenter,
-            // but coalesced (see scheduleRecenter). Focus is re-applied on the
-            // selection change that accompanies every edit.
-            scheduleRecenter()
+            textView.needsDisplay = true   // refresh placeholder visibility
+            textView.scheduleRecenter()
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {
-            if let textView = notification.object as? NSTextView { applyFocus(to: textView) }
-            scheduleRecenter()
-        }
-
-        /// Coalesce recenter to a single run on the next runloop tick, after
-        /// layout settles. Without this, two delegate callbacks per keystroke
-        /// (text + selection) each scrolled to a slightly different caret rect —
-        /// the flicker between two positions, and the double-return drift.
-        private var recenterScheduled = false
-        func scheduleRecenter() {
-            guard parent.typewriter, !recenterScheduled else { return }
-            recenterScheduled = true
-            DispatchQueue.main.async { [weak self] in
-                self?.recenterScheduled = false
-                self?.recenter()
-            }
+            guard let textView = notification.object as? TypewriterTextView else { return }
+            applyFocus(to: textView)
+            textView.scheduleRecenter()
         }
 
         /// Dim the whole text, then restore full color to the sentence the caret
-        /// is in. Falls back to no dimming when the caret sits between sentences
-        /// (e.g. trailing whitespace), which reads fine.
+        /// is in. Whole-text fallback when the caret sits between sentences.
         func applyFocus(to textView: NSTextView) {
             guard let storage = textView.textStorage else { return }
             let full = NSRange(location: 0, length: storage.length)
@@ -162,8 +150,6 @@ struct WritingSurface: NSViewRepresentable {
             storage.endEditing()
         }
 
-        /// The UTF-16 range of the sentence containing `caret`, via the locale's
-        /// sentence tokenizer. Whole-text fallback if none contains the caret.
         private func sentenceRange(in text: String, caret: Int) -> NSRange {
             var result = NSRange(location: 0, length: (text as NSString).length)
             text.enumerateSubstrings(in: text.startIndex..<text.endIndex,
@@ -176,55 +162,105 @@ struct WritingSurface: NSViewRepresentable {
             }
             return result
         }
-
-        /// Scroll so the caret line sits at the typewriter anchor.
-        func recenter() {
-            guard parent.typewriter,
-                  let textView,
-                  let scroll = textView.enclosingScrollView,
-                  let clip = scroll.contentView as? TypewriterClipView,
-                  textView.window != nil
-            else { return }
-            let caret = caretRectInView(textView)
-            guard caret != .zero else { return }
-            let h = clip.bounds.height
-            let target = caret.midY - h * parent.anchor
-            // No-op if we're already there — typing along one line shouldn't
-            // re-scroll, only a vertical line change should.
-            if abs(clip.bounds.origin.y - target) < 0.5 { return }
-            clip.scroll(to: NSPoint(x: 0, y: target))
-            scroll.reflectScrolledClipView(clip)
-        }
-
-        /// The caret rect in the text view's coordinate space. `firstRect` is
-        /// TextKit-version agnostic (returns screen coords), so this works under
-        /// TextKit 2 without poking at layout fragments directly.
-        private func caretRectInView(_ tv: NSTextView) -> NSRect {
-            guard let window = tv.window else { return .zero }
-            let screen = tv.firstRect(forCharacterRange: tv.selectedRange(), actualRange: nil)
-            guard screen != .zero else { return .zero }
-            let inWindow = window.convertFromScreen(screen)
-            return tv.convert(inWindow, from: nil)
-        }
     }
 }
 
-/// Clip view that permits scrolling past the document's top and bottom edges by
-/// the amount needed for the first/last lines to reach the typewriter anchor.
-final class TypewriterClipView: NSClipView {
+/// NSTextView that keeps the active line vertically centered (typewriter mode)
+/// using stable TextKit 1 geometry, and draws a placeholder where text begins.
+final class TypewriterTextView: NSTextView {
     var typewriter = true
-    var anchor: CGFloat = 0.45
+    var lineSpacingValue: CGFloat = 0
+    var placeholder = ""
+    var placeholderColor: NSColor = .placeholderTextColor
 
-    override func constrainBoundsRect(_ proposedBounds: NSRect) -> NSRect {
-        let rect = super.constrainBoundsRect(proposedBounds)
-        guard typewriter, let docView = documentView else { return rect }
-        let h = rect.height
-        let overscrollTop = h * anchor
-        let overscrollBottom = h * (1 - anchor)
-        let minY = -overscrollTop
-        let maxY = max(minY, docView.frame.height - h + overscrollBottom)
-        var out = rect
-        out.origin.y = min(max(proposedBounds.origin.y, minY), maxY)
-        return out
+    // MARK: Overscroll
+
+    /// Symmetric top/bottom inset of ~half the viewport so the first and last
+    /// lines can reach the center. As a bonus this starts an empty document
+    /// centered, so the placeholder/first line sit mid-screen.
+    func updateOverscrollInset() {
+        guard typewriter, let clip = enclosingScrollView?.contentView else {
+            textContainerInset = NSSize(width: 0, height: 8)
+            return
+        }
+        let inset = max(8, floor((clip.bounds.height - activeLineHeight()) / 2))
+        textContainerInset = NSSize(width: 0, height: inset)
     }
+
+    @objc func viewportChanged() {
+        updateOverscrollInset()
+        recenter()
+    }
+
+    private func activeLineHeight() -> CGFloat {
+        guard let lm = layoutManager, let f = font else { return 21 }
+        return lm.defaultLineHeight(for: f) + lineSpacingValue
+    }
+
+    // MARK: Typewriter centering (coalesced)
+
+    private var recenterScheduled = false
+    func scheduleRecenter() {
+        guard typewriter, !recenterScheduled else { return }
+        recenterScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            self?.recenterScheduled = false
+            self?.recenter()
+        }
+    }
+
+    /// Scroll so the caret's line fragment is centered in the viewport. Reads
+    /// the line rect from the (eagerly laid-out, stable) layout manager.
+    func recenter() {
+        guard typewriter,
+              let lm = layoutManager,
+              let container = textContainer,
+              let scroll = enclosingScrollView,
+              window != nil
+        else { return }
+
+        guard let line = caretLineRect(lm, container) else { return }
+        let viewLine = line.offsetBy(dx: 0, dy: textContainerOrigin.y)
+        let h = scroll.contentView.bounds.height
+        let target = viewLine.midY - h / 2
+        let clip = scroll.contentView
+        // No-op if we're already there — typing along one line shouldn't
+        // re-scroll. With stable TextKit 1 coordinates this guard actually
+        // holds, which is what kills the feedback loop.
+        if abs(clip.bounds.origin.y - target) < 0.5 { return }
+        clip.scroll(to: NSPoint(x: 0, y: target))
+        scroll.reflectScrolledClipView(clip)
+    }
+
+    /// Line-fragment rect (container coords) for the line the caret is on,
+    /// handling the caret at end-of-document / on the trailing empty line.
+    private func caretLineRect(_ lm: NSLayoutManager, _ container: NSTextContainer) -> NSRect? {
+        let charLen = (string as NSString).length
+        let loc = min(selectedRange().location, charLen)
+        if loc >= charLen, lm.extraLineFragmentTextContainer != nil {
+            return lm.extraLineFragmentRect
+        }
+        if lm.numberOfGlyphs == 0 {
+            // Empty document with no extra fragment — center on the insertion origin.
+            return NSRect(origin: .zero, size: NSSize(width: 0, height: activeLineHeight()))
+        }
+        let glyphIndex = min(lm.glyphIndexForCharacter(at: loc), lm.numberOfGlyphs - 1)
+        return lm.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: nil)
+    }
+
+    // MARK: Placeholder
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard string.isEmpty, !placeholder.isEmpty else { return }
+        let pad = textContainer?.lineFragmentPadding ?? 0
+        let origin = NSPoint(x: textContainerOrigin.x + pad, y: textContainerOrigin.y)
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font ?? NSFont.systemFont(ofSize: 21),
+            .foregroundColor: placeholderColor,
+        ]
+        (placeholder as NSString).draw(at: origin, withAttributes: attrs)
+    }
+
+    deinit { NotificationCenter.default.removeObserver(self) }
 }

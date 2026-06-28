@@ -15,25 +15,18 @@ struct SessionView: View {
         VStack(spacing: 0) {
             // The writing surface — quiet, centered, no chrome. Charter, the
             // reading serif: in a writing app, what you produce is the prose.
-            ZStack(alignment: .topLeading) {
-                if model.text.isEmpty {
-                    Text("what's here right now?")
-                        .font(WoojType.reading.font)
-                        .foregroundStyle(WoojColor.muted)
-                        .padding(.top, 8)
-                        .padding(.leading, 5)
-                        .allowsHitTesting(false)
-                }
-                WritingSurface(
-                    text: $model.text,
-                    font: writingFont,
-                    textColor: NSColor(WoojColor.ink),
-                    caretColor: NSColor(WoojColor.clay),
-                    lineSpacing: WoojType.reading.lineSpacing,
-                    dimColor: NSColor(WoojColor.muted)
-                )
-                .onChange(of: model.text) { model.textChanged() }
-            }
+            // The placeholder is drawn by the surface (so it sits where text
+            // begins, mid-screen under typewriter scrolling).
+            WritingSurface(
+                text: $model.text,
+                font: writingFont,
+                textColor: NSColor(WoojColor.ink),
+                caretColor: NSColor(WoojColor.clay),
+                lineSpacing: WoojType.reading.lineSpacing,
+                placeholder: "what's here right now?",
+                dimColor: NSColor(WoojColor.muted)
+            )
+            .onChange(of: model.text) { model.textChanged() }
             .frame(maxWidth: 640)
             .padding(.horizontal, WoojSpace.xxl)
             .padding(.top, WoojSpace.huge)
