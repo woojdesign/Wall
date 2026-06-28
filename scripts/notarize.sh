@@ -25,10 +25,32 @@ echo "→ packaging $APP for submission…"
 ditto -c -k --keepParent "$APP" "$ZIP"
 
 echo "→ submitting to Apple (typically 1–10 minutes, blocks until done)…"
+# Capture the exit code explicitly — otherwise `set -e` aborts on a non-zero
+# notarytool *before* the output is echoed, swallowing the real error behind a
+# bare exit code (e.g. the keychain-profile-missing case that bit us once).
+set +e
 SUBMIT_OUT=$(xcrun notarytool submit "$ZIP" \
     --keychain-profile "$PROFILE" \
     --wait 2>&1)
+SUBMIT_RC=$?
+set -e
 echo "$SUBMIT_OUT"
+
+if [ "$SUBMIT_RC" -ne 0 ]; then
+    echo
+    echo "✗ notarytool submit failed (exit $SUBMIT_RC)."
+    case "$SUBMIT_OUT" in
+        *"No Keychain password item"*|*"Invalid credentials"*|*401*)
+            echo "  The '$PROFILE' keychain profile is missing or invalid. Re-create it:"
+            echo "    xcrun notarytool store-credentials $PROFILE --apple-id <email> --team-id BSPX8X9U4B"
+            ;;
+        *)
+            echo "  Often transient (Apple notary service). Try again in a minute."
+            ;;
+    esac
+    rm -f "$ZIP"
+    exit 1
+fi
 
 STATUS=$(echo "$SUBMIT_OUT" | grep -E "^[[:space:]]*status:" | tail -1 | awk -F': *' '{print $2}')
 ID=$(echo "$SUBMIT_OUT" | grep -E "^[[:space:]]*id:" | head -1 | awk -F': *' '{print $2}')
