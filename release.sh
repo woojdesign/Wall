@@ -33,6 +33,17 @@ REPO="woojdesign/Wall"
 PROFILE="wall-notary"
 BUILD="$(git rev-list --count HEAD)"
 
+# Notary auth for the DMG (notarize.sh handles the app the same way). Prefer the
+# ASC API key file — durable, where the keychain notary profile kept vanishing.
+ASC_KEY_PATH="${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_R2874DGSGN.p8}"
+ASC_KEY_ID="${ASC_KEY_ID:-R2874DGSGN}"
+ASC_ISSUER_ID="${ASC_ISSUER_ID:-aaea5e06-a424-4055-81b4-49f47d252adb}"
+if [ -f "$ASC_KEY_PATH" ]; then
+    NOTARY_AUTH=(--key "$ASC_KEY_PATH" --key-id "$ASC_KEY_ID" --issuer "$ASC_ISSUER_ID")
+else
+    NOTARY_AUTH=(--keychain-profile "$PROFILE")
+fi
+
 KEEP_NOTES=0
 EDIT_NOTES=1
 for arg in "$@"; do
@@ -94,7 +105,7 @@ echo "==> Build DMG"
 DMG="build/Wall.dmg"
 if [ -f "$DMG" ]; then
     echo "==> Notarize DMG"
-    xcrun notarytool submit "$DMG" --keychain-profile "$PROFILE" --wait
+    xcrun notarytool submit "$DMG" "${NOTARY_AUTH[@]}" --wait
     xcrun stapler staple "$DMG"
 fi
 

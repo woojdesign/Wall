@@ -13,6 +13,23 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="$ROOT/build/Wall.app"
 PROFILE="wall-notary"
 
+# Notary auth. Prefer the App Store Connect API key (a .p8 *file*) over the
+# keychain profile: the keychain notary item kept vanishing on this machine
+# (while the Developer ID cert + Sparkle key persisted), and a file doesn't.
+# Shared with StickySync. Values default to the active key; ASC_* env overrides.
+ASC_KEY_PATH="${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_R2874DGSGN.p8}"
+ASC_KEY_ID="${ASC_KEY_ID:-R2874DGSGN}"
+ASC_ISSUER_ID="${ASC_ISSUER_ID:-aaea5e06-a424-4055-81b4-49f47d252adb}"
+if [ -f "$ASC_KEY_PATH" ]; then
+    NOTARY_AUTH="--key $ASC_KEY_PATH --key-id $ASC_KEY_ID --issuer $ASC_ISSUER_ID"
+elif xcrun notarytool history --keychain-profile "$PROFILE" >/dev/null 2>&1; then
+    NOTARY_AUTH="--keychain-profile $PROFILE"
+else
+    echo "✗ No notary credentials: ASC key not at $ASC_KEY_PATH, and no '$PROFILE' keychain profile."
+    echo "  Drop the .p8 there, or: xcrun notarytool store-credentials $PROFILE --apple-id <email> --team-id BSPX8X9U4B"
+    exit 1
+fi
+
 if [ ! -d "$APP" ]; then
     echo "✗ $APP not found — run scripts/build-app.sh first"
     exit 1
@@ -29,9 +46,7 @@ echo "→ submitting to Apple (typically 1–10 minutes, blocks until done)…"
 # notarytool *before* the output is echoed, swallowing the real error behind a
 # bare exit code (e.g. the keychain-profile-missing case that bit us once).
 set +e
-SUBMIT_OUT=$(xcrun notarytool submit "$ZIP" \
-    --keychain-profile "$PROFILE" \
-    --wait 2>&1)
+SUBMIT_OUT=$(xcrun notarytool submit "$ZIP" $NOTARY_AUTH --wait 2>&1)
 SUBMIT_RC=$?
 set -e
 echo "$SUBMIT_OUT"
@@ -40,9 +55,9 @@ if [ "$SUBMIT_RC" -ne 0 ]; then
     echo
     echo "✗ notarytool submit failed (exit $SUBMIT_RC)."
     case "$SUBMIT_OUT" in
-        *"No Keychain password item"*|*"Invalid credentials"*|*401*)
-            echo "  The '$PROFILE' keychain profile is missing or invalid. Re-create it:"
-            echo "    xcrun notarytool store-credentials $PROFILE --apple-id <email> --team-id BSPX8X9U4B"
+        *"Invalid credentials"*|*401*|*"No Keychain password item"*)
+            echo "  Auth rejected. Using: $NOTARY_AUTH"
+            echo "  Check the ASC key file/id/issuer, or re-store the keychain profile."
             ;;
         *)
             echo "  Often transient (Apple notary service). Try again in a minute."
@@ -60,7 +75,7 @@ if [ "$STATUS" != "Accepted" ]; then
     echo "✗ Notarization status: $STATUS"
     if [ -n "$ID" ]; then
         echo "  Fetching log for submission $ID …"
-        xcrun notarytool log "$ID" --keychain-profile "$PROFILE" 2>&1
+        xcrun notarytool log "$ID" $NOTARY_AUTH 2>&1
     fi
     rm -f "$ZIP"
     exit 1
