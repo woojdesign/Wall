@@ -29,7 +29,8 @@ struct SessionView: View {
                     font: writingFont,
                     textColor: NSColor(WoojColor.ink),
                     caretColor: NSColor(WoojColor.clay),
-                    lineSpacing: WoojType.reading.lineSpacing
+                    lineSpacing: WoojType.reading.lineSpacing,
+                    dimColor: NSColor(WoojColor.muted)
                 )
                 .onChange(of: model.text) { model.textChanged() }
             }
