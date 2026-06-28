@@ -141,8 +141,8 @@ struct WritingSurface: NSViewRepresentable {
             storage.beginEditing()
             if parent.focusMode, storage.length > 0 {
                 storage.addAttribute(.foregroundColor, value: parent.dimColor, range: full)
-                let focus = sentenceRange(in: textView.string,
-                                          caret: textView.selectedRange().location)
+                let focus = FocusBoundary.sentenceRange(in: textView.string,
+                                                        caret: textView.selectedRange().location)
                 storage.addAttribute(.foregroundColor, value: parent.textColor, range: focus)
             } else {
                 storage.addAttribute(.foregroundColor, value: parent.textColor, range: full)
@@ -150,18 +150,50 @@ struct WritingSurface: NSViewRepresentable {
             storage.endEditing()
         }
 
-        private func sentenceRange(in text: String, caret: Int) -> NSRange {
-            var result = NSRange(location: 0, length: (text as NSString).length)
-            text.enumerateSubstrings(in: text.startIndex..<text.endIndex,
-                                     options: .bySentences) { _, range, _, stop in
-                let ns = NSRange(range, in: text)
-                if caret >= ns.location && caret <= ns.location + ns.length {
-                    result = ns
-                    stop = true
-                }
-            }
-            return result
+    }
+}
+
+/// Which run of text counts as the "active sentence" for focus dimming.
+///
+/// Deterministic on purpose: a sentence ends at `.`, `!`, `?`, `…`, or a
+/// newline — never dependent on what follows. The locale sentence tokenizer
+/// (`enumerateSubstrings(.bySentences)`) treats "period + capital" as a
+/// boundary but "period + lowercase" as an abbreviation, which made the dimming
+/// feel inconsistent while writing. When the caret sits right after a
+/// terminator, the just-finished sentence stays lit until the next one starts.
+enum FocusBoundary {
+    static let terminators = Set(".!?…\n".unicodeScalars)
+
+    static func sentenceRange(in text: String, caret: Int) -> NSRange {
+        let ns = text as NSString
+        let len = ns.length
+        guard len > 0 else { return NSRange(location: 0, length: 0) }
+        let c = min(max(caret, 0), len)
+
+        func isBoundary(_ idx: Int) -> Bool {
+            guard idx >= 0, idx < len, let s = Unicode.Scalar(ns.character(at: idx)) else { return false }
+            return terminators.contains(s)
         }
+
+        // End (exclusive). If the caret just landed after a terminator, the
+        // active sentence is the one that terminator ends.
+        var end = len
+        if c > 0 && isBoundary(c - 1) {
+            end = c
+        } else {
+            var j = c
+            while j < len { if isBoundary(j) { end = j + 1; break }; j += 1 }
+        }
+        // Start: just past the previous boundary (skip the terminator at end-1).
+        var start = 0
+        var i = end - 2
+        while i >= 0 { if isBoundary(i) { start = i + 1; break }; i -= 1 }
+        // Don't light leading whitespace/newlines.
+        while start < end,
+              let s = Unicode.Scalar(ns.character(at: start)),
+              CharacterSet.whitespacesAndNewlines.contains(s) { start += 1 }
+
+        return NSRange(location: start, length: max(0, end - start))
     }
 }
 
