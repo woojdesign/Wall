@@ -48,7 +48,8 @@ struct MenuBarContent: View {
             .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
 
             Button("Archive") {
-                openWindow(id: "archive")
+                openWindow(id: "wall")
+                Navigation.shared.tab = .archive
                 NSApp.activate(ignoringOtherApps: true)
             }
             .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)

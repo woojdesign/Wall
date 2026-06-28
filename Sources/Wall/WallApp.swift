@@ -56,14 +56,6 @@ struct WallApp: App {
         .windowResizability(.contentSize)
         .defaultPosition(.center)
 
-        // Archive — read-only library of past sessions.
-        Window("Archive", id: "archive") {
-            ArchiveView()
-        }
-        .windowStyle(.hiddenTitleBar)
-        .windowResizability(.contentMinSize)
-        .defaultSize(width: 860, height: 600)
-
         // Preferences (⌘,) — currently just the writing-folder location.
         Settings {
             SettingsView()
@@ -139,7 +131,11 @@ struct WallTrayIcon: View {
 
 struct RootView: View {
     @EnvironmentObject var model: SessionModel
-    @Environment(\.openWindow) private var openWindow
+    @ObservedObject private var nav = Navigation.shared
+
+    // The Archive is only reachable when you're not mid-session — the wall is
+    // for writing, not browsing.
+    private var archiveOpen: Bool { nav.tab == .archive && model.phase != .active }
 
     var body: some View {
         ZStack {
@@ -148,23 +144,32 @@ struct RootView: View {
             WoojColor.ground.ignoresSafeArea()
             VStack(spacing: 0) {
                 HelperBanner()
-                phaseView
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Group {
+                    if archiveOpen {
+                        ArchiveView()
+                    } else {
+                        phaseView
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        // A quiet way into the archive from the main screen — but not while a
-        // session is active; the wall is for writing, not browsing.
+        // Toggle between the editor and the Archive, in the same window. Hidden
+        // mid-session.
         .overlay(alignment: .topTrailing) {
             if model.phase != .active {
-                Button("Archive") {
-                    openWindow(id: "archive")
-                    NSApp.activate(ignoringOtherApps: true)
+                Button(archiveOpen ? "Write" : "Archive") {
+                    nav.tab = archiveOpen ? .write : .archive
                 }
                 .buttonStyle(.plain)
                 .font(WoojType.label.font)
                 .foregroundStyle(WoojColor.tertiary)
                 .padding(WoojSpace.lg)
             }
+        }
+        // Starting a session always returns to the writing surface.
+        .onChange(of: model.phase) { _, phase in
+            if phase == .active { nav.tab = .write }
         }
         // wooj-tokens is light-only today; pin light so fixed warm values
         // aren't fighting a dark system appearance.

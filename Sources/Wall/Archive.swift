@@ -109,7 +109,7 @@ struct ArchiveView: View {
             Rectangle().fill(WoojColor.line).frame(width: 1)
             reader.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 780, minHeight: 480)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(WoojColor.ground)
         .preferredColorScheme(.light)
         .task { model.reload() }
@@ -289,13 +289,24 @@ private struct EntryReader: View {
     }
 }
 
-/// "Archive" menu item — its own view so it can reach `openWindow` from the
-/// `.commands` builder (and be reused in the tray popover).
+/// Which view the main window is showing. The Archive lives *inside* the editor
+/// window now (a tab), not a separate window.
+enum MainTab { case write, archive }
+
+@MainActor
+final class Navigation: ObservableObject {
+    static let shared = Navigation()
+    @Published var tab: MainTab = .write
+}
+
+/// "Archive" menu item (⌘L) — switches the main window to the Archive tab and
+/// brings it forward.
 struct ArchiveCommand: View {
     @Environment(\.openWindow) private var openWindow
     var body: some View {
         Button("Archive") {
-            openWindow(id: "archive")
+            openWindow(id: "wall")
+            Navigation.shared.tab = .archive
             NSApp.activate(ignoringOtherApps: true)
         }
         .keyboardShortcut("l", modifiers: .command)
