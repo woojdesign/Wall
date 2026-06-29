@@ -30,7 +30,9 @@ App Store.
 What it does (see the header of `release.sh`): draft changelog → build +
 Developer ID sign → notarize → staple → zip (Sparkle artifact) → notarized DMG
 (first install) → EdDSA-sign + `generate_appcast` → `gh release create`. Tag is
-`v0.1.0`. **Last shipped: 0.2.0 — "The writing surface" milestone (TextKit 1
+`v0.1.0`. **Last shipped: 0.2.2 — immersion clock (quiet analog clock in the
+full-screen corner). 0.2.1 was the archive-nav fix + visual-regression tests +
+ASC-key notarization; 0.2.0 was the "The writing surface" milestone (TextKit 1
 editor, typewriter scrolling, sentence focus, immersion, markdown headings,
 in-window Archive, configurable save location).**
 
