@@ -132,6 +132,8 @@ struct WallTrayIcon: View {
 struct RootView: View {
     @EnvironmentObject var model: SessionModel
     @ObservedObject private var nav = Navigation.shared
+    @AppStorage("immersiveSessions") private var immersive = true
+    @AppStorage("immersionClock") private var immersionClock = true
 
     // The Archive is only reachable when you're not mid-session — the wall is
     // for writing, not browsing.
@@ -165,6 +167,18 @@ struct RootView: View {
                     .foregroundStyle(WoojColor.tertiary)
                     .padding(WoojSpace.lg)
             }
+        }
+        // A quiet clock in the full-screen corner — immersion hides the menu
+        // bar's clock, so hand the time back without breaking flow.
+        .overlay(alignment: .topTrailing) {
+            ZStack {
+                if model.phase == .active && immersive && immersionClock {
+                    ImmersionClock()
+                        .padding(WoojSpace.xl)
+                        .transition(.opacity)
+                }
+            }
+            .animation(WoojMotion.calm.animation, value: model.phase)
         }
         // Starting a session always returns to the writing surface.
         .onChange(of: model.phase) { _, phase in

@@ -6,6 +6,7 @@ import WoojTokens
 struct SettingsView: View {
     @State private var path = Storage.directoryURL.path
     @AppStorage("immersiveSessions") private var immersive = true
+    @AppStorage("immersionClock") private var immersionClock = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: WoojSpace.lg) {
@@ -19,6 +20,20 @@ struct SettingsView: View {
                 .toggleStyle(.switch)
                 .tint(WoojColor.clay)
                 Text("When a session begins, Wall takes the whole screen and hides the menu bar — the wall, but for your screen too.")
+                    .font(WoojType.body.font)
+                    .foregroundStyle(WoojColor.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Toggle(isOn: $immersionClock) {
+                    Text("Show a quiet clock in full-screen")
+                        .font(WoojType.body.font)
+                        .foregroundStyle(WoojColor.ink)
+                }
+                .toggleStyle(.switch)
+                .tint(WoojColor.clay)
+                .disabled(!immersive)
+                .opacity(immersive ? 1 : 0.5)
+                Text("A small analog clock in the corner — the menu bar's clock is hidden in full-screen, so this hands the time back without breaking flow.")
                     .font(WoojType.body.font)
                     .foregroundStyle(WoojColor.secondary)
                     .fixedSize(horizontal: false, vertical: true)
