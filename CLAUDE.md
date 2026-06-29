@@ -2,6 +2,13 @@
 
 Auto-loaded by Claude Code each session. Keep terse; link to scripts/code for detail.
 
+**Keep this file current.** At every commit, if the change touches anything
+documented here — layout, the release pipeline, versioning, the **Last shipped**
+marker, Sparkle/signing specifics, gotchas — update CLAUDE.md *in the same
+commit*. A release always bumps **Last shipped**. Stale notes here silently
+mislead the next session, so treat the doc update as part of the change, not a
+follow-up.
+
 ## What it is
 
 Menu-bar macOS app (SwiftUI, macOS 15+) that raises a "wall" — a `pf`-based
