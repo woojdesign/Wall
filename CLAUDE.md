@@ -37,11 +37,11 @@ App Store.
 What it does (see the header of `release.sh`): draft changelog → build +
 Developer ID sign → notarize → staple → zip (Sparkle artifact) → notarized DMG
 (first install) → EdDSA-sign + `generate_appcast` → `gh release create`. Tag is
-`v0.1.0`. **Last shipped: 0.2.3 — contextual first-run onboarding (one-time
-confirmation on the first Begin) + finish-screen "where's my writing" pointer
-(real save folder + one-tap Archive). 0.2.2 was the immersion clock; 0.2.1 the
-archive-nav fix + visual-regression tests + ASC-key notarization; 0.2.0 the
-"The writing surface" milestone (TextKit 1 editor, typewriter scrolling, sentence
+`v0.1.0`. **Last shipped: 0.2.4 — dark mode (Wall-local warm-dark `Palette` +
+System/Light/Dark toggle) and a centered, slightly bolder writing caret. 0.2.3
+was contextual onboarding + the "where's my writing" pointer; 0.2.2 the immersion
+clock; 0.2.1 archive-nav + snapshot tests + ASC-key notarization; 0.2.0 the
+"writing surface" milestone (TextKit 1 editor, typewriter scrolling, sentence
 focus, immersion, markdown headings, in-window Archive, configurable save).**
 
 The first release is the bootstrap: install it by hand on each Mac (download the
