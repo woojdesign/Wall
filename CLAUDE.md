@@ -99,7 +99,14 @@ open notes in `$EDITOR`).
 ## Tests + CI
 
 - `swift test` runs `Tests/WallTests` — pure `SessionModel` logic (word/char
-  counting, gates, progress) and `WallSettings` codable, via `MockBlocker`.
+  counting, gates, progress) and `WallSettings` codable, via `MockBlocker`, plus
+  `SnapshotTests` (swift-snapshot-testing; `ImageRenderer` @ scale 2, references in
+  `__Snapshots__/`). To re-record after an intentional UI change, delete the PNG
+  and re-run.
+- **First-run onboarding** is contextual, not a tour: the first `Begin` shows a
+  one-time confirmation (`Onboarding.swift`, gated by `@AppStorage("hasBegunOnce")`).
+  Re-trigger it for testing with `scripts/reset-onboarding.sh` (clears the flag +
+  relaunches the dev build).
 - **CI** (`.github/workflows/ci.yml`) builds + tests on `macos-15` for every
   push/PR to `main`. Wall references `../wooj-tokens` by local path, so the
   workflow checks out **woojdesign/wooj-tokens** as a sibling — keep that step

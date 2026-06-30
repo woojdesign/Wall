@@ -62,4 +62,13 @@ final class SnapshotTests: XCTestCase {
         assertView(DoneView().environmentObject(model()),
                    size: CGSize(width: 880, height: 740))
     }
+
+    /// First-session confirmation, rendered over the start screen it dims.
+    func testFirstSessionSheet() {
+        let view = ZStack {
+            StartView().environmentObject(model())
+            FirstSessionSheet(minutes: 20, target: 1250, unit: "words", keepOnline: false, onBegin: {}, onCancel: {})
+        }
+        assertView(view, size: CGSize(width: 880, height: 740))
+    }
 }

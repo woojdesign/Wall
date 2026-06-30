@@ -3,6 +3,10 @@ import WoojTokens
 
 struct StartView: View {
     @EnvironmentObject var model: SessionModel
+    // First-run only: the first Begin shows a one-time confirmation of what the
+    // wall does (contextual onboarding), then this latches and never returns.
+    @AppStorage("hasBegunOnce") private var hasBegunOnce = false
+    @State private var confirming = false
 
     private struct Preset: Identifiable, Equatable {
         let minutes: Int, words: Int
@@ -54,7 +58,9 @@ struct StartView: View {
             .labelsHidden()
             .frame(width: 240)
 
-            Button("Begin") { model.begin() }
+            Button("Begin") {
+                if hasBegunOnce { model.begin() } else { confirming = true }
+            }
                 .buttonStyle(WallPrimaryButtonStyle())
                 .frame(width: 240)
                 .padding(.top, WoojSpace.xs)
@@ -74,6 +80,20 @@ struct StartView: View {
             .animation(WoojMotion.calm.animation, value: model.settings.keepOnline)
         }
         .padding(WoojSpace.xxl)
+        .overlay {
+            if confirming {
+                FirstSessionSheet(
+                    minutes: model.settings.durationMinutes,
+                    target: model.settings.wordTarget,
+                    unit: model.settings.countMode.label,
+                    keepOnline: model.settings.keepOnline,
+                    onBegin: { hasBegunOnce = true; confirming = false; model.begin() },
+                    onCancel: { confirming = false }
+                )
+                .transition(.opacity)
+            }
+        }
+        .animation(WoojMotion.calm.animation, value: confirming)
     }
 }
 
