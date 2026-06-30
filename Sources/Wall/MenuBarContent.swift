@@ -74,7 +74,6 @@ struct MenuBarContent: View {
         }
         .padding(WoojSpace.md)
         .frame(width: 260, alignment: .leading)
-        .preferredColorScheme(.light)
     }
 
     private var statusLabel: String {

@@ -46,6 +46,5 @@ struct AboutView: View {
         .padding(WoojSpace.xl)
         .frame(width: 320)
         .background(Palette.ground)
-        .preferredColorScheme(.light)
     }
 }

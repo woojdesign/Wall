@@ -111,7 +111,6 @@ struct ArchiveView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Palette.ground)
-        .preferredColorScheme(.light)
         .task { model.reload() }
         // Catch sessions finished while the window sat open.
         .onReceive(NotificationCenter.default.publisher(
