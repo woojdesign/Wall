@@ -33,6 +33,14 @@ enum Storage {
         return path == nil || path?.isEmpty == true || path == defaultDirectory.path
     }
 
+    /// A friendly, home-relative location for UI ("Documents › Wall",
+    /// "Dropbox › Wall") — read live so nothing hardcodes the default path.
+    static var displayLocation: String {
+        var parts = directoryURL.pathComponents.filter { $0 != "/" }
+        if parts.first == "Users" { parts = Array(parts.dropFirst(2)) } // drop /Users/<name>
+        return parts.joined(separator: " › ")
+    }
+
     static func setDirectory(_ url: URL) {
         ensure(url)
         UserDefaults.standard.set(url.path, forKey: key)

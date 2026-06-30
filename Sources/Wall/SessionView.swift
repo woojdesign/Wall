@@ -128,10 +128,19 @@ struct DoneView: View {
         VStack(spacing: WoojSpace.lg) {
             Text("Wall").wallLabel()
             Text("You're back.").wallTitle()
-            Text("The wall is down and your writing is saved in Documents › Wall.")
+            Text("The wall is down. Your writing is saved to \(Storage.displayLocation).")
                 .wallBody()
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 380)
+
+            // Point to where it can be read back, at the moment it matters most.
+            Button { Navigation.shared.tab = .archive } label: {
+                (Text("Read it back anytime in the ").foregroundColor(WoojColor.tertiary)
+                    + Text("Archive").foregroundColor(WoojColor.clay))
+                    .font(WoojType.label.font)
+                    .tracking(WoojType.label.tracking)
+            }
+            .buttonStyle(.plain)
 
             // Quiet exits: take the text with you, or find the file.
             // Placed before the primary action so you see them before committing
