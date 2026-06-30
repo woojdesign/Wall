@@ -347,6 +347,10 @@ final class TypewriterTextView: NSTextView {
 
     // MARK: Caret
 
+    /// A touch fatter than the 1pt system hairline — a writing-first caret with a
+    /// little more presence (à la iA Writer's wider caret).
+    private let caretWidth: CGFloat = 2.5
+
     /// Center the insertion point within the line fragment. `lineSpacing`
     /// inflates the fragment (the extra room sits *below* the glyphs), so the
     /// system-drawn caret spans the whole band and hugs the top — visibly
@@ -360,10 +364,23 @@ final class TypewriterTextView: NSTextView {
                 r.size.height = caretHeight
             }
         }
-        // A touch fatter than the 1pt system hairline — a writing-first caret with
-        // a little more presence (à la iA Writer's wider caret).
-        r.size.width = max(r.size.width, 2.5)
+        r.size.width = max(r.size.width, caretWidth)
         super.drawInsertionPoint(in: r, color: color, turnedOn: flag)
+    }
+
+    /// The fat caret is wider than AppKit's ~1pt insertion-point rect, so AppKit's
+    /// own caret invalidation doesn't cover it — a stale sliver is left behind when
+    /// the caret blinks or moves (the "two vertical lines" while typing, with the
+    /// just-typed glyph between them). Pad caret-sized invalidations horizontally
+    /// so the wide caret always erases cleanly. (Vertical centering needs no pad —
+    /// it stays inside the rect AppKit already invalidates.)
+    override func setNeedsDisplay(_ invalidRect: NSRect, avoidAdditionalLayout flag: Bool) {
+        var r = invalidRect
+        if invalidRect.width < caretWidth + 2 {
+            r.origin.x -= caretWidth
+            r.size.width += caretWidth * 2
+        }
+        super.setNeedsDisplay(r, avoidAdditionalLayout: flag)
     }
 
     // MARK: Placeholder
