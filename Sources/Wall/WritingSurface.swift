@@ -345,6 +345,27 @@ final class TypewriterTextView: NSTextView {
         return lm.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: nil)
     }
 
+    // MARK: Caret
+
+    /// Center the insertion point within the line fragment. `lineSpacing`
+    /// inflates the fragment (the extra room sits *below* the glyphs), so the
+    /// system-drawn caret spans the whole band and hugs the top — visibly
+    /// off-center. Draw a text-height caret centered in the band instead.
+    override func drawInsertionPoint(in rect: NSRect, color: NSColor, turnedOn flag: Bool) {
+        var r = rect
+        if let lm = layoutManager, let f = font {
+            let caretHeight = lm.defaultLineHeight(for: f)
+            if rect.height > caretHeight + 0.5 {
+                r.origin.y = rect.midY - caretHeight / 2
+                r.size.height = caretHeight
+            }
+        }
+        // A touch fatter than the 1pt system hairline — a writing-first caret with
+        // a little more presence (à la iA Writer's wider caret).
+        r.size.width = max(r.size.width, 2.5)
+        super.drawInsertionPoint(in: r, color: color, turnedOn: flag)
+    }
+
     // MARK: Placeholder
 
     override func draw(_ dirtyRect: NSRect) {
