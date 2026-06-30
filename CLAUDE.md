@@ -113,6 +113,16 @@ open notes in `$EDITOR`).
   workflow checks out **woojdesign/wooj-tokens** as a sibling — keep that step
   if you touch CI, or the build can't resolve WoojTokens.
 
+## Theming / dark mode
+
+- Views use **`Palette`** (`Palette.swift`), not `WoojColor` directly: a Wall-local
+  adaptive layer — light values are the wooj-tokens (so light is unchanged), dark
+  is Wall's own warm dark. wooj-tokens is light-only; this stays Wall-local until
+  the shared tokens grow dark variants (then collapse `Palette` onto them).
+- Appearance is **System / Light / Dark** (`@AppStorage("appearance")`), applied
+  app-wide via `NSApplication.appearance` (`AppAppearance.apply`). Don't re-pin
+  `.preferredColorScheme` on the root — that would override the user's choice.
+
 ## Version + About
 
 - `AppVersion` (`Sources/Wall/About.swift`) reads `CFBundleShortVersionString` /

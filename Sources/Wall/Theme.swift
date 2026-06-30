@@ -1,15 +1,15 @@
 import SwiftUI
 import WoojTokens
 
-// Wall is on the shared Wooj design system (wooj-tokens). The local color /
-// spacing / type tokens that used to live here are gone — call sites use
-// `WoojColor` / `WoojSpace` / `WoojType` / `WoojMotion` directly. What stays
-// are thin role helpers (so views read as intent) and Wall's two button
-// styles, both now expressed in Wooj values.
+// Wall is on the shared Wooj design system (wooj-tokens) for spacing / type /
+// motion (`WoojSpace` / `WoojType` / `WoojMotion`, used directly). What stays
+// here are thin role helpers (so views read as intent) and Wall's two button
+// styles.
 //
-// Note: wooj-tokens is light-only today, so Wall runs light-only (the root
-// views pin `.preferredColorScheme(.light)`). Dark mode returns when the
-// token set grows dark variants.
+// Colors go through `Palette` (Palette.swift), not `WoojColor` directly — a
+// Wall-local adaptive layer whose light values ARE the wooj-tokens and whose
+// dark values are Wall's own warm dark. wooj-tokens is still light-only; dark
+// lives in Palette until the shared token set grows dark variants.
 
 // MARK: - Typography roles
 
@@ -19,7 +19,7 @@ extension View {
         self.font(WoojType.label.font)
             .tracking(WoojType.label.tracking)
             .textCase(.uppercase)
-            .foregroundStyle(WoojColor.tertiary)
+            .foregroundStyle(Palette.tertiary)
     }
 
     /// Section headline — Charter (serif). Wall's *voice* is the reading
@@ -29,14 +29,14 @@ extension View {
     func wallTitle() -> some View {
         self.font(.custom("Charter", fixedSize: WoojType.title.size))
             .tracking(WoojType.title.tracking)
-            .foregroundStyle(WoojColor.ink)
+            .foregroundStyle(Palette.ink)
     }
 
     /// Reading copy — Charter, the long-form serif (intro + done-screen voice).
     func wallBody() -> some View {
         self.font(WoojType.reading.font)
             .tracking(WoojType.reading.tracking)
-            .foregroundStyle(WoojColor.reading)
+            .foregroundStyle(Palette.reading)
             .lineSpacing(WoojType.reading.lineSpacing)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -50,12 +50,12 @@ struct WallPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .font(WoojType.label.font)
             .tracking(WoojType.label.tracking)
-            .foregroundStyle(WoojColor.onClay)
+            .foregroundStyle(Palette.onClay)
             .padding(.vertical, WoojSpace.md)
             .padding(.horizontal, WoojSpace.lg)
             .frame(maxWidth: .infinity)
             .background(
-                configuration.isPressed ? WoojColor.clayPressed : WoojColor.clay,
+                configuration.isPressed ? Palette.clayPressed : Palette.clay,
                 in: Capsule()
             )
             .animation(WoojMotion.calm.animation, value: configuration.isPressed)
@@ -68,12 +68,12 @@ struct WallSecondaryButtonStyle: ButtonStyle {
         configuration.label
             .font(WoojType.label.font)
             .tracking(WoojType.label.tracking)
-            .foregroundStyle(WoojColor.ink)
+            .foregroundStyle(Palette.ink)
             .padding(.vertical, WoojSpace.md)
             .padding(.horizontal, WoojSpace.lg)
             .frame(maxWidth: .infinity)
-            .background(WoojColor.surface.opacity(configuration.isPressed ? 0.7 : 0), in: Capsule())
-            .overlay(Capsule().stroke(WoojColor.line, lineWidth: 1))
+            .background(Palette.surface.opacity(configuration.isPressed ? 0.7 : 0), in: Capsule())
+            .overlay(Capsule().stroke(Palette.line, lineWidth: 1))
             .opacity(configuration.isPressed ? 0.7 : 1)
             .animation(WoojMotion.calm.animation, value: configuration.isPressed)
     }

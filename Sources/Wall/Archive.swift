@@ -106,11 +106,11 @@ struct ArchiveView: View {
     var body: some View {
         HStack(spacing: 0) {
             sidebar.frame(width: 300)
-            Rectangle().fill(WoojColor.line).frame(width: 1)
+            Rectangle().fill(Palette.line).frame(width: 1)
             reader.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(WoojColor.ground)
+        .background(Palette.ground)
         .preferredColorScheme(.light)
         .task { model.reload() }
         // Catch sessions finished while the window sat open.
@@ -139,7 +139,7 @@ struct ArchiveView: View {
                         Text("Write")
                     }
                     .font(WoojType.label.font)
-                    .foregroundStyle(WoojColor.clay)
+                    .foregroundStyle(Palette.clay)
                 }
                 .buttonStyle(.plain)
                 Spacer()
@@ -149,7 +149,7 @@ struct ArchiveView: View {
 
             searchField
                 .padding(WoojSpace.sm)
-            Rectangle().fill(WoojColor.line).frame(height: 1)
+            Rectangle().fill(Palette.line).frame(height: 1)
 
             if model.entries.isEmpty {
                 emptyState("Nothing written yet.")
@@ -171,30 +171,30 @@ struct ArchiveView: View {
                                     .padding(.horizontal, WoojSpace.md)
                                     .padding(.vertical, WoojSpace.xs)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(WoojColor.ground)
+                                    .background(Palette.ground)
                             }
                         }
                     }
                 }
             }
         }
-        .background(WoojColor.surface.opacity(0.4))
+        .background(Palette.surface.opacity(0.4))
     }
 
     private var searchField: some View {
         HStack(spacing: WoojSpace.xs) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 12))
-                .foregroundStyle(WoojColor.tertiary)
+                .foregroundStyle(Palette.tertiary)
             TextField("Search", text: $model.query)
                 .textFieldStyle(.plain)
                 .font(WoojType.body.font)
-                .foregroundStyle(WoojColor.ink)
+                .foregroundStyle(Palette.ink)
         }
         .padding(.horizontal, WoojSpace.sm)
         .padding(.vertical, WoojSpace.xs)
-        .background(WoojColor.surface, in: Capsule())
-        .overlay(Capsule().stroke(WoojColor.line, lineWidth: 1))
+        .background(Palette.surface, in: Capsule())
+        .overlay(Capsule().stroke(Palette.line, lineWidth: 1))
     }
 
     private func emptyState(_ message: String) -> some View {
@@ -202,7 +202,7 @@ struct ArchiveView: View {
             Spacer()
             Text(message)
                 .font(WoojType.body.font)
-                .foregroundStyle(WoojColor.tertiary)
+                .foregroundStyle(Palette.tertiary)
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -230,25 +230,25 @@ private struct EntryRow: View {
             HStack {
                 Text(entry.date.formatted(date: .omitted, time: .shortened))
                     .font(WoojType.label.font)
-                    .foregroundStyle(selected ? WoojColor.ink : WoojColor.secondary)
+                    .foregroundStyle(selected ? Palette.ink : Palette.secondary)
                 Spacer()
                 Text("\(entry.wordCount)")
                     .font(WoojType.mono.font)
                     .monospacedDigit()
-                    .foregroundStyle(WoojColor.tertiary)
+                    .foregroundStyle(Palette.tertiary)
             }
             Text(entry.preview)
                 .font(.custom("Charter", fixedSize: WoojType.body.size))
-                .foregroundStyle(selected ? WoojColor.reading : WoojColor.secondary)
+                .foregroundStyle(selected ? Palette.reading : Palette.secondary)
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
         .padding(.horizontal, WoojSpace.md)
         .padding(.vertical, WoojSpace.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(selected ? WoojColor.surface : .clear)
+        .background(selected ? Palette.surface : .clear)
         .overlay(alignment: .bottom) {
-            Rectangle().fill(WoojColor.line).frame(height: 1).opacity(0.5)
+            Rectangle().fill(Palette.line).frame(height: 1).opacity(0.5)
         }
     }
 }
@@ -265,11 +265,11 @@ private struct EntryReader: View {
                 VStack(alignment: .leading, spacing: WoojSpace.xxs) {
                     Text(entry.date.formatted(.dateTime.weekday(.wide).month().day().hour().minute()))
                         .font(WoojType.heading.font)
-                        .foregroundStyle(WoojColor.ink)
+                        .foregroundStyle(Palette.ink)
                     Text("\(entry.wordCount) words")
                         .font(WoojType.mono.font)
                         .monospacedDigit()
-                        .foregroundStyle(WoojColor.tertiary)
+                        .foregroundStyle(Palette.tertiary)
                 }
                 Spacer()
                 HStack(spacing: WoojSpace.md) {
@@ -277,15 +277,15 @@ private struct EntryReader: View {
                     Button("Reveal") { WallActions.revealInFinder(entry.url) }
                         .buttonStyle(.plain)
                         .font(WoojType.label.font)
-                        .foregroundStyle(WoojColor.tertiary)
+                        .foregroundStyle(Palette.tertiary)
                     Button("Delete") { confirmingDelete = true }
                         .buttonStyle(.plain)
                         .font(WoojType.label.font)
-                        .foregroundStyle(WoojColor.clay)
+                        .foregroundStyle(Palette.clay)
                 }
             }
             .padding(WoojSpace.lg)
-            Rectangle().fill(WoojColor.line).frame(height: 1)
+            Rectangle().fill(Palette.line).frame(height: 1)
 
             ScrollView {
                 Text(entry.text.isEmpty ? "Empty" : entry.text)

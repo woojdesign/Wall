@@ -35,14 +35,26 @@ final class SnapshotTests: XCTestCase {
     /// mismatch dimensions across environments.
     private func assertView<V: View>(_ view: V, size: CGSize,
                                      testName: String = #function,
+                                     dark: Bool = false,
                                      file: StaticString = #filePath, line: UInt = #line) {
         let renderer = ImageRenderer(
             content: view
                 .frame(width: size.width, height: size.height)
-                .environment(\.colorScheme, .light)
+                .environment(\.colorScheme, dark ? .dark : .light)
         )
         renderer.scale = 2
-        guard let image = renderer.nsImage else {
+        // Palette's dark variants resolve off the *drawing* appearance, so force
+        // it while rasterizing — colorScheme alone doesn't drive a dynamic NSColor.
+        var image: NSImage?
+        if dark {
+            let previous = NSApplication.shared.appearance
+            NSApplication.shared.appearance = NSAppearance(named: .darkAqua)
+            image = renderer.nsImage
+            NSApplication.shared.appearance = previous
+        } else {
+            image = renderer.nsImage
+        }
+        guard let image else {
             XCTFail("ImageRenderer produced no image", file: file, line: line)
             return
         }
@@ -56,6 +68,15 @@ final class SnapshotTests: XCTestCase {
     func testStartView() {
         assertView(StartView().environmentObject(model()),
                    size: CGSize(width: 880, height: 740))
+    }
+
+    // (No StartView dark snapshot: ImageRenderer can't rasterize the segmented
+    // CountMode picker under a forced dark appearance — it draws an "unrenderable"
+    // placeholder. The control is fine in the real dark app; DoneView dark below
+    // covers the dark palette without a segmented control.)
+    func testDoneViewDark() {
+        let view = ZStack { Palette.ground; DoneView().environmentObject(model()) }
+        assertView(view, size: CGSize(width: 880, height: 740), dark: true)
     }
 
     func testDoneView() {

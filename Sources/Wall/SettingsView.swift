@@ -7,35 +7,50 @@ struct SettingsView: View {
     @State private var path = Storage.directoryURL.path
     @AppStorage("immersiveSessions") private var immersive = true
     @AppStorage("immersionClock") private var immersionClock = true
+    @AppStorage("appearance") private var appearance = "system"
 
     var body: some View {
         VStack(alignment: .leading, spacing: WoojSpace.lg) {
+            VStack(alignment: .leading, spacing: WoojSpace.xs) {
+                Text("Appearance").wallLabel()
+                Picker("", selection: $appearance) {
+                    Text("System").tag("system")
+                    Text("Light").tag("light")
+                    Text("Dark").tag("dark")
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(maxWidth: 280)
+            }
+
+            Divider()
+
             VStack(alignment: .leading, spacing: WoojSpace.xs) {
                 Text("Sessions").wallLabel()
                 Toggle(isOn: $immersive) {
                     Text("Full-screen while writing")
                         .font(WoojType.body.font)
-                        .foregroundStyle(WoojColor.ink)
+                        .foregroundStyle(Palette.ink)
                 }
                 .toggleStyle(.switch)
-                .tint(WoojColor.clay)
+                .tint(Palette.clay)
                 Text("When a session begins, Wall takes the whole screen and hides the menu bar — the wall, but for your screen too.")
                     .font(WoojType.body.font)
-                    .foregroundStyle(WoojColor.secondary)
+                    .foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Toggle(isOn: $immersionClock) {
                     Text("Show a quiet clock in full-screen")
                         .font(WoojType.body.font)
-                        .foregroundStyle(WoojColor.ink)
+                        .foregroundStyle(Palette.ink)
                 }
                 .toggleStyle(.switch)
-                .tint(WoojColor.clay)
+                .tint(Palette.clay)
                 .disabled(!immersive)
                 .opacity(immersive ? 1 : 0.5)
                 Text("A small analog clock in the corner — the menu bar's clock is hidden in full-screen, so this hands the time back without breaking flow.")
                     .font(WoojType.body.font)
-                    .foregroundStyle(WoojColor.secondary)
+                    .foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -45,39 +60,38 @@ struct SettingsView: View {
 
             Text("New writing is saved here. Point it at a synced folder — Dropbox, iCloud Drive — to back it up or keep it across Macs.")
                 .font(WoojType.body.font)
-                .foregroundStyle(WoojColor.secondary)
+                .foregroundStyle(Palette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             // Current path, middle-truncated so the meaningful tail stays visible.
             Text(path)
                 .font(WoojType.mono.font)
-                .foregroundStyle(WoojColor.ink)
+                .foregroundStyle(Palette.ink)
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .padding(WoojSpace.sm)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(WoojColor.surface, in: RoundedRectangle(cornerRadius: 8))
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(WoojColor.line, lineWidth: 1))
+                .background(Palette.surface, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Palette.line, lineWidth: 1))
 
             HStack(spacing: WoojSpace.md) {
                 Button("Change…") { chooseFolder() }
                 Button("Reveal") { WallActions.revealInFinder(Storage.directoryURL) }
                     .buttonStyle(.plain)
                     .font(WoojType.label.font)
-                    .foregroundStyle(WoojColor.tertiary)
+                    .foregroundStyle(Palette.tertiary)
                 Spacer()
                 if !Storage.isDefault {
                     Button("Use Default") { resetToDefault() }
                         .buttonStyle(.plain)
                         .font(WoojType.label.font)
-                        .foregroundStyle(WoojColor.tertiary)
+                        .foregroundStyle(Palette.tertiary)
                 }
             }
         }
         .padding(WoojSpace.xl)
         .frame(width: 460)
-        .background(WoojColor.ground)
-        .preferredColorScheme(.light)
+        .background(Palette.ground)
     }
 
     private func chooseFolder() {

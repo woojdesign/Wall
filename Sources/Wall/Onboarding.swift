@@ -53,8 +53,8 @@ struct FirstSessionSheet: View {
             }
             .padding(WoojSpace.xxl)
             .frame(maxWidth: 420)
-            .background(WoojColor.ground, in: RoundedRectangle(cornerRadius: 16))
-            .overlay(RoundedRectangle(cornerRadius: 16).stroke(WoojColor.line, lineWidth: 1))
+            .background(Palette.ground, in: RoundedRectangle(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Palette.line, lineWidth: 1))
             .shadow(color: .black.opacity(0.12), radius: 24, y: 8)
             .padding(WoojSpace.xxl)
         }

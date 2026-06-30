@@ -12,17 +12,17 @@ struct MenuBarContent: View {
             case .idle:
                 Text("Wall").wallLabel()
                 Text("The wall is down.")
-                    .font(WoojType.body.font).foregroundStyle(WoojColor.ink)
+                    .font(WoojType.body.font).foregroundStyle(Palette.ink)
             case .active:
                 Text(statusLabel).wallLabel()
-                ProgressView(value: model.progress).tint(WoojColor.ink)
+                ProgressView(value: model.progress).tint(Palette.ink)
                 Text("\(model.count)/\(model.settings.wordTarget) \(model.settings.countMode.label)  ·  \(short)")
                     .font(WoojType.mono.font).monospacedDigit()
-                    .foregroundStyle(WoojColor.secondary)
+                    .foregroundStyle(Palette.secondary)
             case .complete:
                 Text("Wall").wallLabel()
                 Text("You're back.")
-                    .font(WoojType.body.font).foregroundStyle(WoojColor.ink)
+                    .font(WoojType.body.font).foregroundStyle(Palette.ink)
             }
 
             // Pull the last writing without opening the window. Not shown
@@ -45,31 +45,31 @@ struct MenuBarContent: View {
                 openWindow(id: "wall")
                 NSApp.activate(ignoringOtherApps: true)
             }
-            .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
+            .buttonStyle(.plain).foregroundStyle(Palette.secondary)
 
             Button("Archive") {
                 openWindow(id: "wall")
                 Navigation.shared.tab = .archive
                 NSApp.activate(ignoringOtherApps: true)
             }
-            .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
+            .buttonStyle(.plain).foregroundStyle(Palette.secondary)
 
             Button("About Wall") {
                 openWindow(id: "about")
                 NSApp.activate(ignoringOtherApps: true)
             }
-            .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
+            .buttonStyle(.plain).foregroundStyle(Palette.secondary)
 
             CheckForUpdatesButton()
                 .buttonStyle(.plain)
-                .foregroundStyle(WoojColor.secondary)
+                .foregroundStyle(Palette.secondary)
 
             Button("Quit Wall") { NSApplication.shared.terminate(nil) }
-                .buttonStyle(.plain).foregroundStyle(WoojColor.secondary)
+                .buttonStyle(.plain).foregroundStyle(Palette.secondary)
 
             Text("Wall \(AppVersion.display)")
                 .font(WoojType.caption.font)
-                .foregroundStyle(WoojColor.tertiary)
+                .foregroundStyle(Palette.tertiary)
                 .padding(.top, WoojSpace.xxs)
         }
         .padding(WoojSpace.md)

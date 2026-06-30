@@ -73,7 +73,7 @@ struct StartView: View {
             } label: {
                 Text(model.settings.keepOnline ? "staying online" : "or stay online for this one")
                     .font(WoojType.label.font)
-                    .foregroundStyle(WoojColor.tertiary)
+                    .foregroundStyle(Palette.tertiary)
                     .contentTransition(.opacity)
             }
             .buttonStyle(.plain)
@@ -107,11 +107,11 @@ private struct Chip: View {
             Text(title)
                 .font(WoojType.label.font)
                 .tracking(WoojType.label.tracking)
-                .foregroundStyle(selected ? WoojColor.ink : WoojColor.tertiary)
+                .foregroundStyle(selected ? Palette.ink : Palette.tertiary)
                 .padding(.vertical, WoojSpace.xs)
                 .padding(.horizontal, WoojSpace.md)
-                .background(selected ? AnyShapeStyle(WoojColor.surface) : AnyShapeStyle(.clear), in: Capsule())
-                .overlay(Capsule().stroke(WoojColor.line, lineWidth: 1).opacity(selected ? 1 : 0.6))
+                .background(selected ? AnyShapeStyle(Palette.surface) : AnyShapeStyle(.clear), in: Capsule())
+                .overlay(Capsule().stroke(Palette.line, lineWidth: 1).opacity(selected ? 1 : 0.6))
         }
         .buttonStyle(.plain)
     }
@@ -131,7 +131,7 @@ private struct Dial: View {
                 Text("\(value)")
                     .font(WoojType.display.font)
                     .tracking(WoojType.display.tracking)
-                    .foregroundStyle(WoojColor.ink)
+                    .foregroundStyle(Palette.ink)
                     .frame(minWidth: 96)
                     .contentTransition(.numericText())
                     .animation(WoojMotion.settle.animation, value: value)
@@ -148,10 +148,10 @@ private struct StepButton: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(WoojColor.secondary)
+                .foregroundStyle(Palette.secondary)
                 .frame(width: 32, height: 32)
-                .background(WoojColor.surface, in: Circle())
-                .overlay(Circle().stroke(WoojColor.line, lineWidth: 1))
+                .background(Palette.surface, in: Circle())
+                .overlay(Circle().stroke(Palette.line, lineWidth: 1))
         }
         .buttonStyle(.plain)
     }

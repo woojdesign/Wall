@@ -31,7 +31,7 @@ private struct ClockFace: View {
             // Faint ring.
             ctx.stroke(
                 Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)),
-                with: .color(WoojColor.line),
+                with: .color(Palette.line),
                 lineWidth: 1
             )
 
@@ -43,7 +43,7 @@ private struct ClockFace: View {
                 var tick = Path()
                 tick.move(to: CGPoint(x: c.x + sa * (r - 3.5), y: c.y - ca * (r - 3.5)))
                 tick.addLine(to: CGPoint(x: c.x + sa * r, y: c.y - ca * r))
-                ctx.stroke(tick, with: .color(WoojColor.line), lineWidth: 1)
+                ctx.stroke(tick, with: .color(Palette.line), lineWidth: 1)
             }
 
             // Time → hand angles. Hour hand carries the minute fraction so it sits
@@ -61,14 +61,14 @@ private struct ClockFace: View {
                                       y: c.y - CGFloat(cos(angle)) * length))
                 ctx.stroke(p, with: .color(color), style: StrokeStyle(lineWidth: width, lineCap: .round))
             }
-            hand(hourAngle, length: r * 0.5, color: WoojColor.muted, width: 1.6)
-            hand(minuteAngle, length: r * 0.78, color: WoojColor.secondary, width: 1.4)
+            hand(hourAngle, length: r * 0.5, color: Palette.muted, width: 1.6)
+            hand(minuteAngle, length: r * 0.78, color: Palette.secondary, width: 1.4)
 
             // Center pivot.
             let dot: CGFloat = 1.4
             ctx.fill(
                 Path(ellipseIn: CGRect(x: c.x - dot, y: c.y - dot, width: dot * 2, height: dot * 2)),
-                with: .color(WoojColor.secondary)
+                with: .color(Palette.secondary)
             )
         }
     }

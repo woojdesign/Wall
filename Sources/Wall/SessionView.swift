@@ -20,11 +20,11 @@ struct SessionView: View {
             WritingSurface(
                 text: $model.text,
                 font: writingFont,
-                textColor: NSColor(WoojColor.ink),
-                caretColor: NSColor(WoojColor.clay),
+                textColor: Palette.inkNS,
+                caretColor: Palette.clayNS,
                 lineSpacing: WoojType.reading.lineSpacing,
                 placeholder: "what's here right now?",
-                dimColor: NSColor(WoojColor.muted)
+                dimColor: Palette.mutedNS
             )
             .onChange(of: model.text) { model.textChanged() }
             .frame(maxWidth: 640)
@@ -67,7 +67,7 @@ struct SessionView: View {
             Text("The wall is down — keep going, or finish when you're ready.")
                 .font(WoojType.label.font)
                 .tracking(WoojType.label.tracking)
-                .foregroundStyle(WoojColor.tertiary)
+                .foregroundStyle(Palette.tertiary)
                 .multilineTextAlignment(.center)
             Button("I'm done") { model.finish() }
                 .buttonStyle(WallSecondaryButtonStyle())
@@ -80,8 +80,8 @@ struct SessionView: View {
     private var progressBar: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Rectangle().fill(WoojColor.line)
-                Rectangle().fill(WoojColor.ink.opacity(0.3))
+                Rectangle().fill(Palette.line)
+                Rectangle().fill(Palette.ink.opacity(0.3))
                     .frame(width: geo.size.width * model.progress)
                     .animation(WoojMotion.calm.animation, value: model.progress)
             }
@@ -95,12 +95,12 @@ struct SessionView: View {
             Text("\(model.count) / \(model.settings.wordTarget) \(model.settings.countMode.label)")
                 .font(WoojType.mono.font)
                 .monospacedDigit()
-                .foregroundStyle(model.wordGateMet ? WoojColor.secondary : WoojColor.tertiary)
+                .foregroundStyle(model.wordGateMet ? Palette.secondary : Palette.tertiary)
             Spacer()
             Text(timeString)
                 .font(WoojType.mono.font)
                 .monospacedDigit()
-                .foregroundStyle(model.timeGateMet ? WoojColor.secondary : WoojColor.tertiary)
+                .foregroundStyle(model.timeGateMet ? Palette.secondary : Palette.tertiary)
         }
     }
 
@@ -135,8 +135,8 @@ struct DoneView: View {
 
             // Point to where it can be read back, at the moment it matters most.
             Button { Navigation.shared.tab = .archive } label: {
-                (Text("Read it back anytime in the ").foregroundColor(WoojColor.tertiary)
-                    + Text("Archive").foregroundColor(WoojColor.clay))
+                (Text("Read it back anytime in the ").foregroundColor(Palette.tertiary)
+                    + Text("Archive").foregroundColor(Palette.clay))
                     .font(WoojType.label.font)
                     .tracking(WoojType.label.tracking)
             }

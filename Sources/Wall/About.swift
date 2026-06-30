@@ -33,19 +33,19 @@ struct AboutView: View {
             Text("Version \(AppVersion.display)")
                 .font(WoojType.mono.font)
                 .monospacedDigit()
-                .foregroundStyle(WoojColor.secondary)
+                .foregroundStyle(Palette.secondary)
 
             Text("A wall for focused writing.")
                 .font(WoojType.body.font)
-                .foregroundStyle(WoojColor.secondary)
+                .foregroundStyle(Palette.secondary)
 
             Link("woojdesign/Wall", destination: URL(string: "https://github.com/woojdesign/Wall")!)
                 .font(WoojType.label.font)
-                .foregroundStyle(WoojColor.clay)
+                .foregroundStyle(Palette.clay)
         }
         .padding(WoojSpace.xl)
         .frame(width: 320)
-        .background(WoojColor.ground)
+        .background(Palette.ground)
         .preferredColorScheme(.light)
     }
 }

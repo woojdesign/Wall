@@ -134,6 +134,7 @@ struct RootView: View {
     @ObservedObject private var nav = Navigation.shared
     @AppStorage("immersiveSessions") private var immersive = true
     @AppStorage("immersionClock") private var immersionClock = true
+    @AppStorage("appearance") private var appearance = "system"
 
     // The Archive is only reachable when you're not mid-session — the wall is
     // for writing, not browsing.
@@ -143,7 +144,7 @@ struct RootView: View {
         ZStack {
             // Flat warm bone — the calm Wooj ground. (The old animated
             // gradient is retired; flag in the report if its drift is missed.)
-            WoojColor.ground.ignoresSafeArea()
+            Palette.ground.ignoresSafeArea()
             VStack(spacing: 0) {
                 HelperBanner()
                 Group {
@@ -164,7 +165,7 @@ struct RootView: View {
                 Button("Archive") { nav.tab = .archive }
                     .buttonStyle(.plain)
                     .font(WoojType.label.font)
-                    .foregroundStyle(WoojColor.tertiary)
+                    .foregroundStyle(Palette.tertiary)
                     .padding(WoojSpace.lg)
             }
         }
@@ -184,9 +185,10 @@ struct RootView: View {
         .onChange(of: model.phase) { _, phase in
             if phase == .active { nav.tab = .write }
         }
-        // wooj-tokens is light-only today; pin light so fixed warm values
-        // aren't fighting a dark system appearance.
-        .preferredColorScheme(.light)
+        // Appearance: System / Light / Dark, applied app-wide (Palette resolves
+        // its dark variants off the effective appearance).
+        .onAppear { AppAppearance.apply(appearance) }
+        .onChange(of: appearance) { _, v in AppAppearance.apply(v) }
         // Full-screen while writing; back to a window when the session ends.
         .immersion(phase: model.phase)
     }
@@ -217,22 +219,22 @@ struct HelperBanner: View {
             HStack(spacing: WoojSpace.md) {
                 Text(message)
                     .font(WoojType.body.font)
-                    .foregroundStyle(WoojColor.secondary)
+                    .foregroundStyle(Palette.secondary)
                 Spacer()
                 Button("Open Settings") {
                     helper.openLoginItemsSettings()
                 }
                 .buttonStyle(.plain)
                 .font(WoojType.body.font)
-                .foregroundStyle(WoojColor.clay)
+                .foregroundStyle(Palette.clay)
             }
             .padding(.horizontal, WoojSpace.lg)
             .padding(.vertical, WoojSpace.xs)
             .frame(maxWidth: .infinity)
-            .background(WoojColor.surface)
+            .background(Palette.surface)
             .overlay(alignment: .bottom) {
                 Rectangle()
-                    .fill(WoojColor.line)
+                    .fill(Palette.line)
                     .frame(height: 1)
             }
         }
