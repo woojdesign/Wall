@@ -126,10 +126,14 @@ struct WritingSurface: NSViewRepresentable {
             }
         }
 
+        private var wasEmpty = true
         func textDidChange(_ notification: Notification) {
             guard let textView = notification.object as? TypewriterTextView else { return }
             parent.text = textView.string
-            textView.needsDisplay = true   // refresh placeholder visibility
+            // The placeholder only shows when the document is empty, so only force
+            // a full redraw across the empty↔non-empty edge, not on every keystroke.
+            let isEmpty = textView.string.isEmpty
+            if isEmpty != wasEmpty { wasEmpty = isEmpty; textView.needsDisplay = true }
             scheduleMarkdown()
             textView.scheduleRecenter()
         }
@@ -140,21 +144,45 @@ struct WritingSurface: NSViewRepresentable {
             textView.scheduleRecenter()
         }
 
-        /// Dim the whole text, then restore full color to the sentence the caret
-        /// is in. Whole-text fallback when the caret sits between sentences.
+        /// Dim the text, then relight the sentence the caret is in.
+        ///
+        /// Only the on-screen range is recolored. Off-screen color is invisible
+        /// and gets corrected as it scrolls in, so the per-keystroke cost stays
+        /// flat regardless of document length. Recoloring the whole document on
+        /// every selection change is what made the caret collide with its own
+        /// redraw past ~1000 words.
         func applyFocus(to textView: NSTextView) {
-            guard let storage = textView.textStorage else { return }
-            let full = NSRange(location: 0, length: storage.length)
+            guard let storage = textView.textStorage, storage.length > 0 else { return }
+            guard parent.focusMode else {
+                storage.addAttribute(.foregroundColor, value: parent.textColor,
+                                     range: NSRange(location: 0, length: storage.length))
+                return
+            }
+            let visible = visibleCharacterRange(textView)
             storage.beginEditing()
-            if parent.focusMode, storage.length > 0 {
-                storage.addAttribute(.foregroundColor, value: parent.dimColor, range: full)
-                let focus = FocusBoundary.sentenceRange(in: textView.string,
-                                                        caret: textView.selectedRange().location)
-                storage.addAttribute(.foregroundColor, value: parent.textColor, range: focus)
-            } else {
-                storage.addAttribute(.foregroundColor, value: parent.textColor, range: full)
+            storage.addAttribute(.foregroundColor, value: parent.dimColor, range: visible)
+            let focus = FocusBoundary.sentenceRange(in: textView.string,
+                                                    caret: textView.selectedRange().location)
+            let lit = NSIntersectionRange(focus, visible)
+            if lit.length > 0 {
+                storage.addAttribute(.foregroundColor, value: parent.textColor, range: lit)
             }
             storage.endEditing()
+        }
+
+        /// On-screen character range, padded by a viewport above and below so the
+        /// dimming is already right before text scrolls into view.
+        private func visibleCharacterRange(_ textView: NSTextView) -> NSRange {
+            guard let lm = textView.layoutManager, let container = textView.textContainer else {
+                return NSRange(location: 0, length: textView.textStorage?.length ?? 0)
+            }
+            let vr = textView.visibleRect
+            var rect = vr.insetBy(dx: 0, dy: -vr.height)   // one viewport of buffer each way
+            let origin = textView.textContainerOrigin
+            rect.origin.x -= origin.x
+            rect.origin.y -= origin.y
+            let glyphs = lm.glyphRange(forBoundingRect: rect, in: container)
+            return lm.characterRange(forGlyphRange: glyphs, actualGlyphRange: nil)
         }
 
         // MARK: Markdown (headers)
