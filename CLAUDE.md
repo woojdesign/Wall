@@ -37,12 +37,13 @@ App Store.
 What it does (see the header of `release.sh`): draft changelog → build +
 Developer ID sign → notarize → staple → zip (Sparkle artifact) → notarized DMG
 (first install) → EdDSA-sign + `generate_appcast` → `gh release create`. Tag is
-`v0.1.0`. **Last shipped: 0.2.5 — fixes for 0.2.4: caret ghosting (stale/double
-carets while typing) and dark mode completed for the Archive, About, and menu-bar
-popover (they kept leftover light pins). 0.2.4 was dark mode + the bolder centered
-caret; 0.2.3 contextual onboarding + the "where's my writing" pointer; 0.2.2 the
-immersion clock; 0.2.1 archive-nav + snapshot tests + ASC-key notarization; 0.2.0
-the "writing surface" milestone.**
+`v0.1.0`. **Last shipped: 0.2.6 — caret stays stable in long documents (focus
+dimming now recolors only the on-screen range instead of the whole document on
+every keystroke, which past ~1000 words collided with the caret's redraw). 0.2.5
+fixed caret ghosting + finished dark mode (Archive/About/menu-bar); 0.2.4 dark
+mode + the bolder centered caret; 0.2.3 contextual onboarding + the "where's my
+writing" pointer; 0.2.2 the immersion clock; 0.2.1 archive-nav + snapshot tests +
+ASC-key notarization; 0.2.0 the "writing surface" milestone.**
 
 The first release is the bootstrap: install it by hand on each Mac (download the
 DMG). Every release after that updates installed copies automatically from
